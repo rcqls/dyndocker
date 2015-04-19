@@ -15,7 +15,7 @@ bash $HOME/.dyndocker/install/install-atom-dyndocker.sh
 # Use
 
 * Requirements: Virtualbox, docker and docker-machine (possibly via Kitematic installation)
-* Open a terminal and :
-** dyndocker new
-** dyndocker start (this cannot be done directly via Kitematic) 
+* Open a terminal:
+## dyndocker new
+## dyndocker start (this cannot be done directly via Kitematic) 
 

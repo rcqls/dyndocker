@@ -14,7 +14,7 @@ cp dyndocker/client/dyndocker ${DYNDOCKER_ROOT}/bin
 chmod u+x ${DYNDOCKER_ROOT}/bin/dyndocker
 
 echo "To finalize your installation, add in your .bash_profile (or equivalent):"
-echo "export PATH=\${PATH}:${DYNDOCKER_HOME}/bin"
+echo "export PATH=\${PATH}:${DYNDOCKER_ROOT}/bin"
 read -p "Do you want to do it now? Add ${DYNDOCKER_HOME}/bin to your PATH? [1=~/.bash_profile, 2=~/.profile, 3=~/.bashrc, *=No]" -n 1 -r
 echo    # (optional) move to a new line
 case "$REPLY" in
@@ -36,7 +36,7 @@ if [[ "${rcFile}" != "" ]]
 then
 	echo ""
     echo "## added automatically when installing dyndocker" >>  ${HOME}/${rcFile}
-    echo "export PATH=\${PATH}:${DYNDOCKER_HOME}/bin" >> ${HOME}/${rcFile}
+    echo "export PATH=\${PATH}:${DYNDOCKER_ROOT}/bin" >> ${HOME}/${rcFile}
     . ${HOME}/${rcFile}
 fi
 

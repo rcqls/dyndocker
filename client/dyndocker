@@ -1,0 +1,78 @@
+#!/bin/bash
+
+DOCKER_CMD="docker $(docker-machine config dev)"
+DYNDOC_DOCKER_HOME="$HOME/dyndocker"
+DYNDOC_DOCKER_ROOT="$HOME/.dyndocker"
+DYNDOC_DOCKER_LIBRARY="$DYNDOC_DOCKER_ROOT/.library"
+
+cmd="$1"
+
+if [ "$cmd" = "" ]; then
+	cmd="restart"
+fi
+
+# see https://www.wanadev.fr/docker-vivre-avec-une-baleine-partie-2/
+# no more use of "docker run -d" but "docker create" and then docker start|stop|restart
+
+create_dyndoc_container() {
+	${DOCKER_CMD} create \
+		-p 7777:7777 \
+		-v ${DYNDOC_DOCKER_HOME}:/dyndoc-proj \
+		-v ${DYNDOC_DOCKER_LIBRARY}:/dyndoc-library \
+		--name dyndoc \
+		rcqls/dyndoc-docker
+}
+
+remove_dyndoc_container() {
+	${DOCKER_CMD} stop dyndoc
+	${DOCKER_CMD} rm dyndoc
+}
+
+
+start_dyndoc_container() {
+	${DOCKER_CMD} start dyndoc
+}
+
+stop_dyndoc_container() {
+	${DOCKER_CMD} stop dyndoc
+}
+
+restart_dyndoc_container() {
+	${DOCKER_CMD} restart dyndoc
+}
+
+case "$cmd" in
+init)
+	mkdir -p "$DYNDOC_DOCKER_HOME"
+	mkdir -p "$DYNDOC_DOCKER_LIBRARY"
+	;;
+create | new) 
+	create_dyndoc_container
+	;;
+start)
+	start_dyndoc_container
+	;;
+stop)
+	stop_dyndoc_container
+	;;
+restart)
+	restart_dyndoc_container
+	;;
+remove | delete | rm)
+	remove_dyndoc_container
+	;;
+R | irb  | gem | ruby) 
+	shift
+	${DOCKER_CMD} exec -ti dyndoc $cmd $*
+	;;
+bash)
+	${DOCKER_CMD} exec -ti dyndoc /bin/bash
+	;;
+build)
+	shift
+	filename="${@: -1}"
+	length=$(($#-1))
+	dyn_options="${@:1:$length}" #all but last
+	${DOCKER_CMD} exec dyndoc dyn $dyn_options /dyndoc-proj/$filename
+	;;
+esac

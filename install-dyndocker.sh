@@ -34,7 +34,7 @@ case "$REPLY" in
 esac
 if [[ "${rcFile}" != "" ]]
 then
-	echo ""
+	echo "" >> ${HOME}/${rcFile}
     echo "## added automatically when installing dyndocker" >>  ${HOME}/${rcFile}
     echo "export PATH=\${PATH}:${DYNDOCKER_ROOT}/bin" >> ${HOME}/${rcFile}
     . ${HOME}/${rcFile}

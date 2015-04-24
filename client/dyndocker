@@ -1,6 +1,9 @@
 #!/bin/bash
 
-DOCKER_CMD="docker $(docker-machine config dev)"
+DOCKER_CMD="docker"
+if [ "$(which docker-machine)" != "" ];then
+	DOCKER_CMD="docker $(docker-machine config dev)"
+fi
 DYNDOC_DOCKER_HOME="$HOME/dyndocker"
 DYNDOC_DOCKER_ROOT="$HOME/.dyndocker"
 DYNDOC_DOCKER_LIBRARY="$DYNDOC_DOCKER_ROOT/.library"

@@ -23,9 +23,8 @@ fi
 read -p "Do you want to install (dyndocker) atom packages [Y/N]" -n 1 -r
 echo
 echo "install atom packages "
-if [[ "$REPLY" =~ ^[Yy]$ ]]
-then
-	if [[ $MSYSTEM =~ ^MSYS ]]; then
+if echo "$REPLY" | egrep -q '^[Yy]$'; then
+	if echo $MSYSTEM | egrep -q  '^MSYS'; then
 		echo "Open this script inside a MINGW console!"
 		exit
 	fi

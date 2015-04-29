@@ -6,7 +6,7 @@ if [ "$(which docker-machine)" != "" ];then
 fi
 DYNDOC_DOCKER_HOME="$HOME/dyndocker"
 DYNDOC_DOCKER_ROOT="$HOME/.dyndocker"
-DYNDOC_DOCKER_LIBRARY="$DYNDOC_DOCKER_ROOT/.library"
+DYNDOC_DOCKER_LIBRARY="$DYNDOC_DOCKER_ROOT/library"
 
 cmd="$1"
 

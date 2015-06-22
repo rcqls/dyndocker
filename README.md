@@ -1,23 +1,21 @@
 # How to install
 
-Open a terminal and execute the following line:
+* Open a terminal and execute the following line:
 ```{.bash execute="false"}
 # install of dyndocker
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/rcqls/dyndocker/master/install-dyndocker.sh)"
 ```
-
-After installation of atom editor with apm in the PATH
+* After installation of atom editor, install the atom-dyndocker, language-dyndoc and language-r packages.
+With apm in the PATH, yjis can be done via
 ```{.bash execute="false"}
-# install atom-dyndocker package 
-bash $HOME/.dyndocker/install/install-atom-dyndocker.sh
+apm install atom-dyndocker
+apm install language-dyndoc
+apm install language-r
 ```
 
 # Use
 
-* Requirements: Virtualbox, docker and docker-machine (possibly via Kitematic installation)
-* Open a terminal:
-```{.bash execute="false"}
-dyndocker new
-dyndocker start # this cannot be done directly via Kitematic
-``` 
+* Requirements: For MacOSX and Windows users, just install [Kitematic](https://kitematic.com) which install everything you need to play with docker.
+* Every dyndoc document has to be located in the ~/dyndocker directory.
+* TODO: examples of commands
 

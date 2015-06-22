@@ -18,30 +18,32 @@ fi
 # no more use of "docker run -d" but "docker create" and then docker start|stop|restart
 
 create_dyndoc_container() {
+	tag="latest"
+	if [ "$1" = "notexlive" ]; then tag="notexlive"; fi
 	${DOCKER_CMD} create \
 		-p 7777:7777 \
 		-v ${DYNDOC_DOCKER_HOME}:/dyndoc-proj \
 		-v ${DYNDOC_DOCKER_LIBRARY}:/dyndoc-library \
 		--name dyndoc \
-		rcqls/dyndoc-docker
+		rcqls/dyndoc-docker:${tag}
 }
 
 remove_dyndoc_container() {
-	${DOCKER_CMD} stop dyndoc
+	${DOCKER_CMD} stop dyndoc-docker
 	${DOCKER_CMD} rm dyndoc
 }
 
 
 start_dyndoc_container() {
-	${DOCKER_CMD} start dyndoc
+	${DOCKER_CMD} start dyndoc-docker
 }
 
 stop_dyndoc_container() {
-	${DOCKER_CMD} stop dyndoc
+	${DOCKER_CMD} stop dyndoc-docker
 }
 
 restart_dyndoc_container() {
-	${DOCKER_CMD} restart dyndoc
+	${DOCKER_CMD} restart dyndoc-docker
 }
 
 case "$cmd" in
@@ -49,8 +51,9 @@ init)
 	mkdir -p "$DYNDOC_DOCKER_HOME"
 	mkdir -p "$DYNDOC_DOCKER_LIBRARY"
 	;;
-create | new) 
-	create_dyndoc_container
+create | new)
+	shift
+	create_dyndoc_container $*
 	;;
 start)
 	start_dyndoc_container
@@ -66,16 +69,16 @@ remove | delete | rm)
 	;;
 R | irb  | gem | ruby) 
 	shift
-	${DOCKER_CMD} exec -ti dyndoc $cmd $*
+	${DOCKER_CMD} exec -ti dyndoc-docker $cmd $*
 	;;
 bash)
-	${DOCKER_CMD} exec -ti dyndoc /bin/bash
+	${DOCKER_CMD} exec -ti dyndoc-docker /bin/bash
 	;;
 build)
 	shift
 	filename="${@: -1}"
 	length=$(($#-1))
 	dyn_options="${@:1:$length}" #all but last
-	${DOCKER_CMD} exec dyndoc dyn $dyn_options /dyndoc-proj/$filename
+	${DOCKER_CMD} exec dyndoc-docker dyn $dyn_options /dyndoc-proj/$filename
 	;;
 esac

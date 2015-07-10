@@ -24,13 +24,13 @@ create_dyndoc_container() {
 		-p 7777:7777 \
 		-v ${DYNDOC_DOCKER_HOME}:/dyndoc-proj \
 		-v ${DYNDOC_DOCKER_LIBRARY}:/dyndoc-library \
-		--name dyndoc \
+		--name dyndoc-docker \
 		rcqls/dyndoc-docker:${tag}
 }
 
 remove_dyndoc_container() {
 	${DOCKER_CMD} stop dyndoc-docker
-	${DOCKER_CMD} rm dyndoc
+	${DOCKER_CMD} rm dyndoc-docker
 }
 
 

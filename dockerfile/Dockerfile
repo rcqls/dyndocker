@@ -80,12 +80,6 @@ ENV GEM_PATH /dyndoc-library/ruby:$GEM_HOME
 ## Last change for .gemrc to make "gem (un)install <package>" persistant  
 RUN echo "gem: --no-rdoc --no-ri -i /dyndoc-library/ruby" > ~/.gemrc
 
-
-
-# cleanup package manager
-
-RUN apt-get autoclean && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
 ## the dyndoc projects folder
 
 RUN mkdir -p /dyndoc-proj

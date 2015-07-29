@@ -2,6 +2,17 @@ FROM rcqls/dyndocker-root:latest
 
 MAINTAINER "Cqls Team"
 
+
+# install things globally, for great justice
+ENV GEM_HOME /usr/local/bundle
+ENV PATH $GEM_HOME/bin:$PATH
+RUN gem install bundler \
+	&& bundle config --global path "$GEM_HOME" \
+	&& bundle config --global bin "$GEM_HOME/bin"
+
+# don't create ".bundle" in all our apps
+ENV BUNDLE_APP_CONFIG $GEM_HOME
+
 ## Dyndoc
 
 RUN gem install rake configliere ultraviolet
@@ -62,6 +73,12 @@ ENV DYNDOC_LIBRARY /dyndoc-library/dyndoc
 ## R packages
 
 RUN Rscript -e 'install.packages("base64")'
+
+## ruby:	/dyndoc-library/ruby
+ENV PATH $GEM_HOME/bin:$PATH
+ENV GEM_PATH /dyndoc-library/ruby:$GEM_HOME
+## Last change for .gemrc to make "gem (un)install <package>" persistant  
+RUN echo "gem: --no-rdoc --no-ri -i /dyndoc-library/ruby" > ~/.gemrc
 
 
 

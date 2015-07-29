@@ -75,7 +75,7 @@ ENV DYNDOC_LIBRARY /dyndoc-library/dyndoc
 RUN Rscript -e 'install.packages("base64")'
 
 ## ruby:	/dyndoc-library/ruby
-ENV PATH $GEM_HOME/bin:$PATH
+ENV PATH /dyndoc-library/ruby/bin:$PATH
 ENV GEM_PATH /dyndoc-library/ruby:$GEM_HOME
 ## Last change for .gemrc to make "gem (un)install <package>" persistant  
 RUN echo "gem: --no-rdoc --no-ri -i /dyndoc-library/ruby" > ~/.gemrc

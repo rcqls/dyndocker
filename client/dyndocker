@@ -19,7 +19,7 @@ fi
 
 create_dyndoc_container() {
 	tag="latest"
-	if [ "$1" = "notexlive" ]; then tag="notexlive"; fi
+	if [ "$1" != "latest" ]; then tag="$1"; fi
 	${DOCKER_CMD} create \
 		-p 7777:7777 \
 		-v ${DYNDOC_DOCKER_HOME}:/dyndoc-proj \

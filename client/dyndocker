@@ -115,6 +115,7 @@ case "$cmd" in
 	echo "Different choices of <cmd> are:"
 	echo "	-> dyndocker [start|stop|restart] [pdflatex]: to start, stop or restart dyndocker (or pdflatex) container"
 	echo "	-> dyndocker default [container]: set or get default dyndocker container name"
+	;;
 default)
 	if [ "$1" = "" ]; then
 		echo $DYNDOCKER_DEFAULT_CONTAINER
@@ -166,5 +167,10 @@ build)
 	length=$(($#-1))
 	dyn_options="${@:1:$length}" #all but last
 	${DOCKER_CMD} exec dyndocker dyn $dyn_options /dyndoc-proj/$filename
+	;;
+update-client)
+	cd "$DYNDOCKER_ROOT/install/dyndocker"
+	git pull
+	cp client/dyndocker ../../bin
 	;;
 esac

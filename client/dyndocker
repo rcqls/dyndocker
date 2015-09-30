@@ -43,7 +43,7 @@ create_dyndoc_container() {
 		-v ${DYNDOCKER_HOME}:/dyndoc-proj \
 		-v ${DYNDOCKER_LIBRARY}:/dyndoc-library \
 		--name dyndocker \
-		rcqls/${DYNDOCKER_DEFAULT}:${tag}
+		rcqls/${DYNDOCKER_CONTAINER}:${tag}
 }
 
 create_pdflatex_container() {
@@ -150,15 +150,19 @@ create | new)
 	fi
 	;;
 start)
+	shift
 	start_container $*
 	;;
 stop)
+	shift
 	stop_container $*
 	;;
 restart)
+	shift
 	restart_container $*
 	;;
 remove | delete | rm)
+	shift
 	remove_container $*
 	;;
 R | irb  | gem | ruby) 

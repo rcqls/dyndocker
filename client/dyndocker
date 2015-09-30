@@ -169,8 +169,10 @@ build)
 	${DOCKER_CMD} exec dyndocker dyn $dyn_options /dyndoc-proj/$filename
 	;;
 update-client)
+	old=$pwd
 	cd "$DYNDOCKER_ROOT/install/dyndocker"
 	git pull
 	cp client/dyndocker ../../bin
+	cd $old
 	;;
 esac

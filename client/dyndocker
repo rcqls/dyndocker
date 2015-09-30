@@ -161,6 +161,7 @@ pdflatex)
 		pdflatex_options="${@:1:$length}" #all but last
 		${DOCKER_CMD} exec -ti dyndocker-pdflatex pdflatex $pdflatex_options /dyndoc-proj/$filename
 	fi
+	;;
 build)
 	shift
 	filename="${@: -1}"

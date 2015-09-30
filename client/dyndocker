@@ -1,17 +1,35 @@
 #!/bin/bash
 
 DOCKER_CMD="docker"
+
 if [ "$(which docker-machine)" != "" ];then
-	DOCKER_CMD="docker $(docker-machine config dev)"
+	DOCKER_MACHINE_NAME="default"
+	DOCKER_CMD="docker $(docker-machine config ${DOCKER_MACHINE_NAME})"
 fi
-DYNDOC_DOCKER_HOME="$HOME/dyndocker"
-DYNDOC_DOCKER_ROOT="$HOME/.dyndocker"
-DYNDOC_DOCKER_LIBRARY="$DYNDOC_DOCKER_ROOT/library"
+
+DYNDOCKER_HOME="$HOME/dyndocker"
+DYNDOCKER_ROOT="$HOME/.dyndocker"
+DYNDOCKER_LIBRARY="$DYNDOCKER_ROOT/library"
+
+if [ ! -d "$DYNDOCKER_HOME" ]; then
+	mkdir -p "$DYNDOCKER_HOME"
+fi
+if [ ! -d "$DYNDOCKER_LIBRARY" ];then
+	mkdir -p "$DYNDOCKER_LIBRARY"
+fi
+
+DYNDOCKER_DEFAULT_CONTAINER="$DYNDOCKER_ROOT/.default"
+
+if [ -f "$DYNDOCKER_DEFAULT_CONTAINER" ];then
+	DYNDOCKER_CONTAINER=`read $DYNDOCKER_DEFAULT_CONTAINER`
+else 
+	DYNDOCKER_CONTAINER="dyndocker"
+fi
 
 cmd="$1"
 
 if [ "$cmd" = "" ]; then
-	cmd="restart"
+	cmd="--help"
 fi
 
 # see https://www.wanadev.fr/docker-vivre-avec-une-baleine-partie-2/
@@ -22,63 +40,131 @@ create_dyndoc_container() {
 	if [ "$1" != "latest" ]; then tag="$1"; fi
 	${DOCKER_CMD} create \
 		-p 7777:7777 \
-		-v ${DYNDOC_DOCKER_HOME}:/dyndoc-proj \
-		-v ${DYNDOC_DOCKER_LIBRARY}:/dyndoc-library \
-		--name dyndoc-docker \
-		rcqls/dyndoc-docker:${tag}
+		-v ${DYNDOCKER_HOME}:/dyndoc-proj \
+		-v ${DYNDOCKER_LIBRARY}:/dyndoc-library \
+		--name dyndocker \
+		rcqls/${DYNDOCKER_DEFAULT}:${tag}
 }
 
-remove_dyndoc_container() {
-	${DOCKER_CMD} stop dyndoc-docker
-	${DOCKER_CMD} rm dyndoc-docker
+create_pdflatex_container() {
+	tag="latest"
+	if [ "$1" != "latest" ]; then tag="$1"; fi
+	${DOCKER_CMD} create \
+		-v ${DYNDOCKER_HOME}:/dyndoc-proj \
+		--name dyndocker-pdflatex \
+		rcqls/dyndocker-pdflatex:${tag}
+}
+
+remove_container() {
+	if [ "$1" = "" ];then
+		CONTAINER="dyndocker"
+	else 
+		if [ "$1" = "pdflatex" ];then
+			CONTAINER="dyndocker-pdflatex"
+		fi
+	fi
+	if [ "$CONTAINER" != "" ];then
+		${DOCKER_CMD} stop $CONTAINER
+		${DOCKER_CMD} rm $CONTAINER
+	fi
 }
 
 
-start_dyndoc_container() {
-	${DOCKER_CMD} start dyndoc-docker
+start_container() {
+	if [ "$1" = "" ];then
+		CONTAINER="dyndocker"
+	else 
+		if [ "$1" = "pdflatex" ];then
+			CONTAINER="dyndocker-pdflatex"
+		fi
+	fi
+	if [ "$CONTAINER" != "" ];then
+		${DOCKER_CMD} start $CONTAINER
+	fi
 }
 
-stop_dyndoc_container() {
-	${DOCKER_CMD} stop dyndoc-docker
+stop_container() {
+	if [ "$1" = "" ];then
+		CONTAINER="dyndocker"
+	else 
+		if [ "$1" = "pdflatex" ];then
+			CONTAINER="dyndocker-pdflatex"
+		fi
+	fi
+	if [ "$CONTAINER" != "" ];then
+		${DOCKER_CMD} stop $CONTAINER
+	fi
 }
 
-restart_dyndoc_container() {
-	${DOCKER_CMD} restart dyndoc-docker
+restart_container() {
+	if [ "$1" = "" ];then
+		CONTAINER="dyndocker"
+	else 
+		if [ "$1" = "pdflatex" ];then
+			CONTAINER="dyndocker-pdflatex"
+		fi
+	fi
+	if [ "$CONTAINER" != "" ];then
+		${DOCKER_CMD} restart $CONTAINER
+	fi
 }
 
 case "$cmd" in
-init)
-	mkdir -p "$DYNDOC_DOCKER_HOME"
-	mkdir -p "$DYNDOC_DOCKER_LIBRARY"
+--help)
+	echo "dyndocker [cmd] [options]"
+	echo "Different choices of <cmd> are:"
+	echo "	-> dyndocker [start|stop|restart] [pdflatex]: to start, stop or restart dyndocker (or pdflatex) container"
+	echo "	-> dyndocker default [container]: set or get default dyndocker container name"
+default)
+	if [ "$1" = "" ]; then
+		echo $DYNDOCKER_DEFAULT_CONTAINER
+	else
+		echo $1 > "$DYNDOCKER_DEFAULT_CONTAINER"
+	fi
 	;;
 create | new)
 	shift
-	create_dyndoc_container $*
+	if [ "$1" = "pdflatex" ];then
+		shift
+		create_pdflatex_container $*
+	else
+		create_dyndoc_container $*
+	fi
 	;;
 start)
-	start_dyndoc_container
+	start_container $*
 	;;
 stop)
-	stop_dyndoc_container
+	stop_container $*
 	;;
 restart)
-	restart_dyndoc_container
+	restart_container $*
 	;;
 remove | delete | rm)
-	remove_dyndoc_container
+	remove_container $*
 	;;
 R | irb  | gem | ruby) 
 	shift
-	${DOCKER_CMD} exec -ti dyndoc-docker $cmd $*
+	${DOCKER_CMD} exec -ti dyndocker $cmd $*
 	;;
 bash)
-	${DOCKER_CMD} exec -ti dyndoc-docker /bin/bash
+	${DOCKER_CMD} exec -ti dyndocker /bin/bash
 	;;
+pdflatex)
+	if [ "$1" = "" ]; then
+		${DOCKER_CMD} exec -ti dyndocker-pdflatex /bin/bash
+	else
+		shift
+		filename="${@: -1}"
+		length=$(($#-1))
+		pdflatex_options="${@:1:$length}" #all but last
+		${DOCKER_CMD} exec -ti dyndocker-pdflatex pdflatex $pdflatex_options /dyndoc-proj/$filename
+	fi
 build)
 	shift
 	filename="${@: -1}"
 	length=$(($#-1))
 	dyn_options="${@:1:$length}" #all but last
-	${DOCKER_CMD} exec dyndoc-docker dyn $dyn_options /dyndoc-proj/$filename
+	${DOCKER_CMD} exec dyndocker dyn $dyn_options /dyndoc-proj/$filename
 	;;
 esac

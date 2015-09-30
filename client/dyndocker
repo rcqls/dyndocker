@@ -21,7 +21,7 @@ fi
 DYNDOCKER_DEFAULT_CONTAINER="$DYNDOCKER_ROOT/.default"
 
 if [ -f "$DYNDOCKER_DEFAULT_CONTAINER" ];then
-	DYNDOCKER_CONTAINER=`read $DYNDOCKER_DEFAULT_CONTAINER`
+	DYNDOCKER_CONTAINER=`cat $DYNDOCKER_DEFAULT_CONTAINER`
 else 
 	DYNDOCKER_CONTAINER="dyndocker"
 fi
@@ -53,6 +53,13 @@ create_pdflatex_container() {
 		-v ${DYNDOCKER_HOME}:/dyndoc-proj \
 		--name dyndocker-pdflatex \
 		rcqls/dyndocker-pdflatex:${tag}
+
+	# the following wrapper allows us to compile a file giving its name relatively to the dyndocker home root
+	echo "Create pdflatex wrapper to use inside container"
+	echo '#!/bin/bash' > ${DYNDOCKER_HOME}/.pdflatex.sh
+	echo 'filename="${@: -1}";dirname=`dirname ${filename}`;basename=`basename ${filename} .tex`;length=$(($#-1));pdflatex_options="${@:1:$length}"' >> ${DYNDOCKER_HOME}/.pdflatex.sh
+	echo 'cd /dyndoc-proj/$dirname' >> ${DYNDOCKER_HOME}/.pdflatex.sh
+	echo 'pdflatex $pdflatex_options $basename' >> ${DYNDOCKER_HOME}/.pdflatex.sh
 }
 
 remove_container() {
@@ -109,19 +116,29 @@ restart_container() {
 	fi
 }
 
+pdflatex-wrap() {
+	filename="${@: -1}"
+	dirname=`dirname ${filename}`
+	basename=`basename ${filename} .tex`
+	length=$(($#-1))
+	pdflatex_options="${@:1:$length}" #all but last
+	if [ "$(which pdflatex2)" = "" ]; then
+		${DOCKER_CMD} exec -ti dyndocker-pdflatex /bin/bash -i /dyndoc-proj/.pdflatex.sh $pdflatex_options $filename
+	else
+		owd="$(pwd)"
+		wd="${DYNDOCKER_HOME}/${dirname}"
+		cd ${wd}
+		pdflatex ${pdflatex_options} ${basename}
+		cd "${owd}"
+	fi
+}
+
 case "$cmd" in
 --help)
 	echo "dyndocker [cmd] [options]"
 	echo "Different choices of <cmd> are:"
 	echo "	-> dyndocker [start|stop|restart] [pdflatex]: to start, stop or restart dyndocker (or pdflatex) container"
 	echo "	-> dyndocker default [container]: set or get default dyndocker container name"
-	;;
-default)
-	if [ "$1" = "" ]; then
-		echo $DYNDOCKER_DEFAULT_CONTAINER
-	else
-		echo $1 > "$DYNDOCKER_DEFAULT_CONTAINER"
-	fi
 	;;
 create | new)
 	shift
@@ -152,25 +169,24 @@ bash)
 	${DOCKER_CMD} exec -ti dyndocker /bin/bash
 	;;
 pdflatex)
+	shift
 	if [ "$1" = "" ]; then
 		${DOCKER_CMD} exec -ti dyndocker-pdflatex /bin/bash
 	else
-		shift
-		filename="${@: -1}"
-		length=$(($#-1))
-		pdflatex_options="${@:1:$length}" #all but last
-		${DOCKER_CMD} exec -ti dyndocker-pdflatex pdflatex $pdflatex_options /dyndoc-proj/$filename
+		pdflatex-wrap $*
 	fi
 	;;
 build)
 	shift
 	filename="${@: -1}"
+	dirname=`dirname ${filename}`
+	basename=`basename ${filename} .dyn`
 	length=$(($#-1))
 	dyn_options="${@:1:$length}" #all but last
 	${DOCKER_CMD} exec dyndocker dyn $dyn_options /dyndoc-proj/$filename
 	;;
 update-client)
-	old=$pwd
+	old="$(pwd)"
 	cd "$DYNDOCKER_ROOT/install/dyndocker"
 	git pull
 	cp client/dyndocker ../../bin

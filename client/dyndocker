@@ -37,7 +37,7 @@ fi
 
 create_dyndoc_container() {
 	tag="latest"
-	if [ "$1" != "latest" ]; then tag="$1"; fi
+	if [ "$1" != "" ]; then tag="$1"; fi
 	${DOCKER_CMD} create \
 		-p 7777:7777 \
 		-v ${DYNDOCKER_HOME}:/dyndoc-proj \
@@ -73,6 +73,29 @@ remove_container() {
 	if [ "$CONTAINER" != "" ];then
 		${DOCKER_CMD} stop $CONTAINER
 		${DOCKER_CMD} rm $CONTAINER
+	fi
+}
+
+load_image() {
+	if [ "$1" = "" ];then
+		IMAGE="dyndocker"
+		echo "WARNING: $DYNDOCKER_ROOT/.default changed!"
+		echo "dyndocker" > "$DYNDOCKER_ROOT/.default"
+	else 
+		if [ "$1" = "julia" ];then
+			IMAGE="dyndocker-julia"
+			echo "WARNING: $DYNDOCKER_ROOT/.default changed!"
+			echo "dyndocker-julia" > "$DYNDOCKER_ROOT/.default"
+		fi
+		if [ "$1" = "pdflatex" ];then
+			IMAGE="dyndocker-pdflatex"
+		fi
+	fi
+	if [ "$IMAGE" != "" ];then
+		IMAGE_TGZ="/$IMAGE.tar.gz"
+		if [ -f "$IMAGE_TGZ" ]; then 
+			${DOCKER_CMD} load -i ${IMAGE_TGZ}
+		fi
 	fi
 }
 
@@ -164,6 +187,10 @@ restart)
 remove | delete | rm)
 	shift
 	remove_container $*
+	;;
+load-image)
+	shift
+	load_image $*
 	;;
 R | irb  | gem | ruby) 
 	shift

@@ -42,7 +42,7 @@ create_dyndoc_container() {
 		-p 7777:7777 \
 		-v ${DYNDOCKER_HOME}:/dyndoc-proj \
 		-v ${DYNDOCKER_LIBRARY}:/dyndoc-library \
-		--name dyndocker \
+		-t -i --name dyndocker \
 		rcqls/${DYNDOCKER_CONTAINER}:${tag}
 }
 

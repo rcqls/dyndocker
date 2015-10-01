@@ -51,7 +51,7 @@ create_pdflatex_container() {
 	if [ "$1" != "latest" ]; then tag="$1"; fi
 	${DOCKER_CMD} create \
 		-v ${DYNDOCKER_HOME}:/dyndoc-proj \
-		--name dyndocker-pdflatex \
+		-t -i --name dyndocker-pdflatex \
 		rcqls/dyndocker-pdflatex:${tag}
 
 	# the following wrapper allows us to compile a file giving its name relatively to the dyndocker home root

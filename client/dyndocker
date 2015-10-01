@@ -76,16 +76,24 @@ remove_container() {
 	fi
 }
 
+set_default() {
+	if [ "$1" = "dyndocker-julia" ] || [ "$1" = "dyndocker" ] ;then
+		DEFAULT="$1"
+	fi
+	if [ "$DEFAULT" != "" ]; then
+		echo "WARNING: $DYNDOCKER_ROOT/.default changed!"
+		echo "$DEFAULT" > "$DYNDOCKER_ROOT/.default"
+	fi
+}
+
 load_image() {
 	if [ "$1" = "" ];then
 		IMAGE="dyndocker"
-		echo "WARNING: $DYNDOCKER_ROOT/.default changed!"
-		echo "dyndocker" > "$DYNDOCKER_ROOT/.default"
+		set_default "dyndocker"
 	else 
 		if [ "$1" = "julia" ];then
 			IMAGE="dyndocker-julia"
-			echo "WARNING: $DYNDOCKER_ROOT/.default changed!"
-			echo "dyndocker-julia" > "$DYNDOCKER_ROOT/.default"
+			set_default "dyndocker-julia"
 		fi
 		if [ "$1" = "pdflatex" ];then
 			IMAGE="dyndocker-pdflatex"
@@ -187,6 +195,14 @@ restart)
 remove | delete | rm)
 	shift
 	remove_container $*
+	;;
+default)
+	shift
+	if [ "$1" = "" ];then
+		echo "Default dyndocker container is $(cat $DYNDOCKER_ROOT/.default)"
+	else
+		set_default $1
+	fi
 	;;
 load-image)
 	shift

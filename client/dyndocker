@@ -7,18 +7,31 @@ if [ "$(which docker-machine)" != "" ];then
 	DOCKER_CMD="docker $(docker-machine config ${DOCKER_MACHINE_NAME})"
 fi
 
-DYNDOCKER_HOME="$HOME/dyndocker"
-DYNDOCKER_ROOT="$HOME/.dyndocker"
-DYNDOCKER_LIBRARY="$DYNDOCKER_ROOT/library"
+# This allows us to change the root of dyndocker
+# Useful when using VBox for Win and MacOSX by working inside the Virtual Box
+# at the same place than outside the Virtual Box
+DYNDOCKER_ROOT_FILE="$HOME/.dyndocker_root"
+if [ -f "$DYNDOCKER_ROOT_FILE" ];then
+	DYNDOCKER_ROOT=`cat $DYNDOCKER_ROOT_FILE`
+else
+	DYNDOCKER_ROOT="$HOME"
+fi
 
-if [ ! -d "$DYNDOCKER_HOME" ]; then
-	mkdir -p "$DYNDOCKER_HOME"
+DYNDOCKER_HOME="$DYNDOCKER_ROOT/.dyndocker"
+DYNDOCKER_HOME_DOC="$DYNDOCKER_ROOT/dyndocker"
+
+
+
+DYNDOCKER_LIBRARY="$DYNDOCKER_HOME/library"
+
+if [ ! -d "$DYNDOCKER_HOME_DOC" ]; then
+	mkdir -p "$DYNDOCKER_HOME_DOC"
 fi
 if [ ! -d "$DYNDOCKER_LIBRARY" ];then
 	mkdir -p "$DYNDOCKER_LIBRARY"
 fi
 
-DYNDOCKER_DEFAULT_CONTAINER="$DYNDOCKER_ROOT/.default"
+DYNDOCKER_DEFAULT_CONTAINER="$DYNDOCKER_HOME/.default"
 
 if [ -f "$DYNDOCKER_DEFAULT_CONTAINER" ];then
 	DYNDOCKER_CONTAINER=`cat $DYNDOCKER_DEFAULT_CONTAINER`
@@ -40,7 +53,7 @@ create_dyndoc_container() {
 	if [ "$1" != "" ]; then tag="$1"; fi
 	${DOCKER_CMD} create \
 		-p 7777:7777 \
-		-v ${DYNDOCKER_HOME}:/dyndoc-proj \
+		-v ${DYNDOCKER_HOME_DOC}:/dyndoc-proj \
 		-v ${DYNDOCKER_LIBRARY}:/dyndoc-library \
 		-t -i --name dyndocker \
 		rcqls/${DYNDOCKER_CONTAINER}:${tag}
@@ -50,16 +63,16 @@ create_pdflatex_container() {
 	tag="latest"
 	if [ "$1" != "latest" ]; then tag="$1"; fi
 	${DOCKER_CMD} create \
-		-v ${DYNDOCKER_HOME}:/dyndoc-proj \
+		-v ${DYNDOCKER_HOME_DOC}:/dyndoc-proj \
 		-t -i --name dyndocker-pdflatex \
 		rcqls/dyndocker-pdflatex:${tag}
 
 	# the following wrapper allows us to compile a file giving its name relatively to the dyndocker home root
 	echo "Create pdflatex wrapper to use inside container"
-	echo '#!/bin/bash' > ${DYNDOCKER_HOME}/.pdflatex.sh
-	echo 'filename="${@: -1}";dirname=`dirname ${filename}`;basename=`basename ${filename} .tex`;length=$(($#-1));pdflatex_options="${@:1:$length}"' >> ${DYNDOCKER_HOME}/.pdflatex.sh
-	echo 'cd /dyndoc-proj/$dirname' >> ${DYNDOCKER_HOME}/.pdflatex.sh
-	echo 'pdflatex $pdflatex_options $basename' >> ${DYNDOCKER_HOME}/.pdflatex.sh
+	echo '#!/bin/bash' > ${DYNDOCKER_HOME_DOC}/.pdflatex.sh
+	echo 'filename="${@: -1}";dirname=`dirname ${filename}`;basename=`basename ${filename} .tex`;length=$(($#-1));pdflatex_options="${@:1:$length}"' >> ${DYNDOCKER_HOME_DOC}/.pdflatex.sh
+	echo 'cd /dyndoc-proj/$dirname' >> ${DYNDOCKER_HOME_DOC}/.pdflatex.sh
+	echo 'pdflatex $pdflatex_options $basename' >> ${DYNDOCKER_HOME_DOC}/.pdflatex.sh
 }
 
 remove_container() {
@@ -81,8 +94,8 @@ set_default() {
 		DEFAULT="$1"
 	fi
 	if [ "$DEFAULT" != "" ]; then
-		echo "WARNING: $DYNDOCKER_ROOT/.default changed!"
-		echo "$DEFAULT" > "$DYNDOCKER_ROOT/.default"
+		echo "WARNING: $DYNDOCKER_HOME/.default changed!"
+		echo "$DEFAULT" > "$DYNDOCKER_HOME/.default"
 	fi
 }
 
@@ -157,7 +170,7 @@ pdflatex-wrap() {
 		${DOCKER_CMD} exec -ti dyndocker-pdflatex /bin/bash -i /dyndoc-proj/.pdflatex.sh $pdflatex_options $filename
 	else
 		owd="$(pwd)"
-		wd="${DYNDOCKER_HOME}/${dirname}"
+		wd="${DYNDOCKER_HOME_DOC}/${dirname}"
 		cd ${wd}
 		pdflatex ${pdflatex_options} ${basename}
 		cd "${owd}"
@@ -199,7 +212,7 @@ remove | delete | rm)
 default)
 	shift
 	if [ "$1" = "" ];then
-		echo "Default dyndocker container is $(cat $DYNDOCKER_ROOT/.default)"
+		echo "Default dyndocker container is $(cat $DYNDOCKER_HOME/.default)"
 	else
 		set_default $1
 	fi
@@ -234,7 +247,7 @@ build)
 	;;
 update-client)
 	old="$(pwd)"
-	cd "$DYNDOCKER_ROOT/install/dyndocker"
+	cd "$DYNDOCKER_HOME/install/dyndocker"
 	git pull
 	cp client/dyndocker ../../bin
 	cd $old

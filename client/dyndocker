@@ -272,6 +272,6 @@ update-client)
 	;;
 update-dyndoc)
 	shift
-	update-dyndoc $1
+	update_dyndoc $1
 	;;
 esac

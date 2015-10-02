@@ -166,7 +166,7 @@ pdflatex-wrap() {
 	basename=`basename ${filename} .tex`
 	length=$(($#-1))
 	pdflatex_options="${@:1:$length}" #all but last
-	if [ "$(which pdflatex2)" = "" ]; then
+	if [ "$(which pdflatex)" = "" ]; then
 		${DOCKER_CMD} exec -ti dyndocker-pdflatex /bin/bash -i /dyndoc-proj/.pdflatex.sh $pdflatex_options $filename
 	else
 		owd="$(pwd)"
@@ -175,6 +175,23 @@ pdflatex-wrap() {
 		pdflatex ${pdflatex_options} ${basename}
 		cd "${owd}"
 	fi
+}
+
+update_dyndoc() {
+	echo "dyndoc_tmp=/.dyndoc_install_tmp" > ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
+	echo 'mkdir -p $dyndoc_tmp' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
+	if [ "$1" = "core" ] || [ "$1" = "" ];then
+		echo 'cd $dyndoc_tmp' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
+		echo 'git clone https://github.com/rcqls/dyndoc-ruby-core.git' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
+		echo 'cd dyndoc-ruby-core;rake docker'>> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
+	fi
+	if [ "$1" = "doc" ] || [ "$1" = "" ];then
+		echo 'cd $dyndoc_tmp' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
+		echo 'git clone https://github.com/rcqls/dyndoc-ruby-doc.git' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
+		echo 'cd dyndoc-ruby-doc;rake docker'>> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
+	fi
+	echo 'rm -fr $dyndoc_tmp' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
+	${DOCKER_CMD} exec -ti dyndocker /bin/bash -i /dyndoc-proj/.dyndoc_update.sh
 }
 
 case "$cmd" in
@@ -243,7 +260,8 @@ build)
 	basename=`basename ${filename} .dyn`
 	length=$(($#-1))
 	dyn_options="${@:1:$length}" #all but last
-	${DOCKER_CMD} exec dyndocker dyn $dyn_options /dyndoc-proj/$filename
+	${DOCKER_CMD} exec dyndocker dyn --docker $dyn_options /dyndoc-proj/$filename
+	pdflatex-wrap $dirname/$basename.tex
 	;;
 update-client)
 	old="$(pwd)"
@@ -251,5 +269,9 @@ update-client)
 	git pull
 	cp client/dyndocker ../../bin
 	cd $old
+	;;
+update-dyndoc)
+	shift
+	update-dyndoc $1
 	;;
 esac

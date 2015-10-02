@@ -277,7 +277,7 @@ build)
 	length=$(($#-1))
 	dyn_options="${@:1:$length}" #all but last
 	${DOCKER_CMD} exec dyndocker dyn --docker $dyn_options /dyndoc-proj/$filename
-	
+	complete_pdflatex
 	;;
 update-client)
 	old="$(pwd)"

@@ -15,7 +15,7 @@ apm install language-r
 
 # Use
 
-* Requirements: docker, git. For MacOSX and Windows users, just install [Kitematic](https://kitematic.com) which install everything you need to play with docker.
-* Every dyndoc document has to be located in the ~/dyndocker directory.
-* TODO: examples of commands
+* Requirements: docker, git. For MacOSX and Windows users, just install [Docker toolbox](https://www.docker.com/toolbox) which install everything you need to play with docker.
+* Every dyndoc or latex document has to be located in the ~/dyndocker directory.
+* Examples (TODO)
 

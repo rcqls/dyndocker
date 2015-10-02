@@ -193,7 +193,7 @@ update_dyndoc() {
 	fi
 	if [ "$1" = "bin" ] || [ "$1" = "" ];then
 		echo 'cd $dyndoc_tmp' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
-		echo 'git clone https://github.com/rcqls/dyndoc-ruby-instal.git' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
+		echo 'git clone https://github.com/rcqls/dyndoc-ruby-install.git' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
 		echo 'cp -r ./dyndoc-ruby-install/dyndoc_basic_root_structure/* /dyndoc'>> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
 	fi
 	echo 'rm -fr $dyndoc_tmp' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh

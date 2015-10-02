@@ -183,7 +183,7 @@ pdflatex_wrap() {
 	fi
 }
 
-complete_pdflatex() {
+pdflatex_complete() {
 	task=`cat ${DYNDOCKER_CACHE}/task_latex_file`
 	#echo "task is $task"
 	IFS=',' read -a tasks <<< "$task"
@@ -223,12 +223,29 @@ update_dyndoc() {
 	${DOCKER_CMD} exec -ti dyndocker /bin/bash -i /dyndoc-proj/.cache/dyndoc_update.sh
 }
 
-case "$cmd" in
---help)
+dyndocker_help() {
 	echo "dyndocker [cmd] [options]"
 	echo "Different choices of <cmd> are:"
+	echo "-> for use inside container:"
+	echo "   ------------------------"
+	echo "	-> dyndocker build <relative_path_from_dyndocker_home/dyn_file>"
+	echo "	-> dyndocker pdflatex <relative_path_from_dyndocker_home/tex_file>"
+	echo "	-> dyndocker bash: open a bash inside the default container"
+	echo "-> for container maintenance:"
+	echo "   -------------------------"
 	echo "	-> dyndocker [start|stop|restart] [pdflatex]: to start, stop or restart dyndocker (or pdflatex) container"
 	echo "	-> dyndocker default [container]: set or get default dyndocker container name"
+	echo "	-> dyndocker new [pdflatex]: create the default or pdflatex container"
+	echo "	-> dyndocker rm [pdflatex]: remove the default or pdflatex container"
+	echo "-> for updates:"
+	echo "    ----------"
+	echo "	-> dyndocker update-client: to update the current dyndocker client"
+	echo "	-> dyndocker update-client: to update the current dyndocker client"
+}
+
+case "$cmd" in
+--help)
+	dyndocker_help
 	;;
 create | new)
 	shift
@@ -290,7 +307,7 @@ build)
 	length=$(($#-1))
 	dyn_options="${@:1:$length}" #all but last
 	${DOCKER_CMD} exec dyndocker dyn --docker $dyn_options /dyndoc-proj/$filename
-	complete_pdflatex
+	pdflatex_complete
 	;;
 update-client)
 	old="$(pwd)"

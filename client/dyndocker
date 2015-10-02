@@ -19,7 +19,9 @@ fi
 
 DYNDOCKER_HOME="$DYNDOCKER_ROOT/.dyndocker"
 DYNDOCKER_HOME_DOC="$DYNDOCKER_ROOT/dyndocker"
+DYNDOCKER_CACHE="${DYNDOCKER_HOME_DOC}/.cache"
 
+mkdir -p ${DYNDOCKER_CACHE}
 
 
 DYNDOCKER_LIBRARY="$DYNDOCKER_HOME/library"
@@ -67,12 +69,7 @@ create_pdflatex_container() {
 		-t -i --name dyndocker-pdflatex \
 		rcqls/dyndocker-pdflatex:${tag}
 
-	# the following wrapper allows us to compile a file giving its name relatively to the dyndocker home root
-	echo "Create pdflatex wrapper to use inside container"
-	echo '#!/bin/bash' > ${DYNDOCKER_HOME_DOC}/.pdflatex.sh
-	echo 'filename="${@: -1}";dirname=`dirname ${filename}`;basename=`basename ${filename} .tex`;length=$(($#-1));pdflatex_options="${@:1:$length}"' >> ${DYNDOCKER_HOME_DOC}/.pdflatex.sh
-	echo 'cd /dyndoc-proj/$dirname' >> ${DYNDOCKER_HOME_DOC}/.pdflatex.sh
-	echo 'pdflatex $pdflatex_options $basename' >> ${DYNDOCKER_HOME_DOC}/.pdflatex.sh
+	create_pdflatex_wrap
 }
 
 remove_container() {
@@ -160,6 +157,15 @@ restart_container() {
 	fi
 }
 
+create_pdflatex_wrap() {
+	# the following wrapper allows us to compile a file giving its name relatively to the dyndocker home root
+	echo "Create pdflatex wrapper to use inside container"
+	echo '#!/bin/bash' > ${DYNDOCKER_CACHE}/pdflatex.sh
+	echo 'filename="${@: -1}";dirname=`dirname ${filename}`;basename=`basename ${filename} .tex`;length=$(($#-1));pdflatex_options="${@:1:$length}"' >> ${DYNDOCKER_CACHE}/pdflatex.sh
+	echo 'cd /dyndoc-proj/$dirname' >> ${DYNDOCKER_CACHE}/pdflatex.sh
+	echo 'pdflatex $pdflatex_options $basename' >> ${DYNDOCKER_CACHE}/pdflatex.sh
+}
+
 pdflatex_wrap() {
 	filename="${@: -1}"
 	dirname=`dirname ${filename}`
@@ -167,7 +173,7 @@ pdflatex_wrap() {
 	length=$(($#-1))
 	pdflatex_options="${@:1:$length}" #all but last
 	if [ "$(which pdflatex)" = "" ]; then
-		${DOCKER_CMD} exec -ti dyndocker-pdflatex /bin/bash -i /dyndoc-proj/.pdflatex.sh $pdflatex_options $filename
+		${DOCKER_CMD} exec -ti dyndocker-pdflatex /bin/bash -i /dyndoc-proj/.cache/pdflatex.sh $pdflatex_options $filename
 	else
 		owd="$(pwd)"
 		wd="${DYNDOCKER_HOME_DOC}/${dirname}"
@@ -178,36 +184,43 @@ pdflatex_wrap() {
 }
 
 complete_pdflatex() {
-	task=`cat ${DYNDOCKER_HOME_DOC}/.tmp/task_latex_file`
-	echo "task is $task"
+	task=`cat ${DYNDOCKER_CACHE}/task_latex_file`
+	#echo "task is $task"
 	IFS=',' read -a tasks <<< "$task"
 	for t in $tasks; do
-		echo "task $t"
-		#pdflatex_wrap $dirname/$basename.te_
+		#echo "task $t"
+		IFS=';' read dir file nb <<< "$t"
+		if [[ $dir =~ "/dyndoc-proj/"(.*) ]]; then 
+		    dir=${BASH_REMATCH[1]}
+		fi
+		#echo "dir=$dir file=$file nb=$nb"
+		for in in $(seq 1 $nb); do
+			pdflatex_wrap $dir/$file.tex
+		done
 	done
 }
 
 update_dyndoc() {
-	echo "dyndoc_tmp=/.dyndoc_install_tmp" > ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
-	echo 'mkdir -p $dyndoc_tmp' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
-	#echo 'echo GEM_PATH=$GEM_PATH' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
+	echo "dyndoc_tmp=/.dyndoc_install_tmp" > ${DYNDOCKER_CACHE}/dyndoc_update.sh
+	echo 'mkdir -p $dyndoc_tmp' >> ${DYNDOCKER_CACHE}/dyndoc_update.sh
+	#echo 'echo GEM_PATH=$GEM_PATH' >> ${DYNDOCKER_CACHE}/dyndoc_update.sh
 	if [ "$1" = "core" ] || [ "$1" = "" ];then
-		echo 'cd $dyndoc_tmp' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
-		echo 'git clone https://github.com/rcqls/dyndoc-ruby-core.git' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
-		echo 'cd dyndoc-ruby-core;rake docker'>> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
+		echo 'cd $dyndoc_tmp' >> ${DYNDOCKER_CACHE}/dyndoc_update.sh
+		echo 'git clone https://github.com/rcqls/dyndoc-ruby-core.git' >> ${DYNDOCKER_CACHE}/dyndoc_update.sh
+		echo 'cd dyndoc-ruby-core;rake docker'>> ${DYNDOCKER_CACHE}/dyndoc_update.sh
 	fi
 	if [ "$1" = "doc" ] || [ "$1" = "" ];then
-		echo 'cd $dyndoc_tmp' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
-		echo 'git clone https://github.com/rcqls/dyndoc-ruby-doc.git' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
-		echo 'cd dyndoc-ruby-doc;rake docker'>> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
+		echo 'cd $dyndoc_tmp' >> ${DYNDOCKER_CACHE}/dyndoc_update.sh
+		echo 'git clone https://github.com/rcqls/dyndoc-ruby-doc.git' >> ${DYNDOCKER_CACHE}/dyndoc_update.sh
+		echo 'cd dyndoc-ruby-doc;rake docker'>> ${DYNDOCKER_CACHE}/dyndoc_update.sh
 	fi
 	if [ "$1" = "bin" ] || [ "$1" = "" ];then
-		echo 'cd $dyndoc_tmp' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
-		echo 'git clone https://github.com/rcqls/dyndoc-ruby-install.git' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
-		echo 'cp -r ./dyndoc-ruby-install/dyndoc_basic_root_structure/* /dyndoc'>> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
+		echo 'cd $dyndoc_tmp' >> ${DYNDOCKER_CACHE}/dyndoc_update.sh
+		echo 'git clone https://github.com/rcqls/dyndoc-ruby-install.git' >> ${DYNDOCKER_CACHE}/dyndoc_update.sh
+		echo 'cp -r ./dyndoc-ruby-install/dyndoc_basic_root_structure/* /dyndoc'>> ${DYNDOCKER_CACHE}/dyndoc_update.sh
 	fi
-	echo 'rm -fr $dyndoc_tmp' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
-	${DOCKER_CMD} exec -ti dyndocker /bin/bash -i /dyndoc-proj/.dyndoc_update.sh
+	echo 'rm -fr $dyndoc_tmp' >> ${DYNDOCKER_CACHE}/dyndoc_update.sh
+	${DOCKER_CMD} exec -ti dyndocker /bin/bash -i /dyndoc-proj/.cache/dyndoc_update.sh
 }
 
 case "$cmd" in

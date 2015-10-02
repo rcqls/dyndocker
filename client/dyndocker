@@ -180,6 +180,7 @@ pdflatex-wrap() {
 update_dyndoc() {
 	echo "dyndoc_tmp=/.dyndoc_install_tmp" > ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
 	echo 'mkdir -p $dyndoc_tmp' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
+	echo 'echo GEM_PATH=$GEM_PATH' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
 	if [ "$1" = "core" ] || [ "$1" = "" ];then
 		echo 'cd $dyndoc_tmp' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
 		echo 'git clone https://github.com/rcqls/dyndoc-ruby-core.git' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh

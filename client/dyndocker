@@ -160,7 +160,7 @@ restart_container() {
 	fi
 }
 
-pdflatex-wrap() {
+pdflatex_wrap() {
 	filename="${@: -1}"
 	dirname=`dirname ${filename}`
 	basename=`basename ${filename} .tex`
@@ -177,10 +177,20 @@ pdflatex-wrap() {
 	fi
 }
 
+complete_pdflatex() {
+	task=`cat ${DYNDOCKER_HOME_DOC}/.tmp/task_latex_file`
+	echo "task is $task"
+	IFS=',' read -a tasks <<< "$task"
+	for t in $tasks; do
+		echo "task $t"
+		#pdflatex_wrap $dirname/$basename.te_
+	done
+}
+
 update_dyndoc() {
 	echo "dyndoc_tmp=/.dyndoc_install_tmp" > ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
 	echo 'mkdir -p $dyndoc_tmp' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
-	echo 'echo GEM_PATH=$GEM_PATH' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
+	#echo 'echo GEM_PATH=$GEM_PATH' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
 	if [ "$1" = "core" ] || [ "$1" = "" ];then
 		echo 'cd $dyndoc_tmp' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
 		echo 'git clone https://github.com/rcqls/dyndoc-ruby-core.git' >> ${DYNDOCKER_HOME_DOC}/.dyndoc_update.sh
@@ -256,7 +266,7 @@ pdflatex)
 	if [ "$1" = "" ]; then
 		${DOCKER_CMD} exec -ti dyndocker-pdflatex /bin/bash
 	else
-		pdflatex-wrap $*
+		pdflatex_wrap $*
 	fi
 	;;
 build)
@@ -267,7 +277,7 @@ build)
 	length=$(($#-1))
 	dyn_options="${@:1:$length}" #all but last
 	${DOCKER_CMD} exec dyndocker dyn --docker $dyn_options /dyndoc-proj/$filename
-	pdflatex-wrap $dirname/$basename.tex
+	
 	;;
 update-client)
 	old="$(pwd)"

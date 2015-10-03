@@ -200,6 +200,55 @@ pdflatex_complete() {
 	done
 }
 
+# From: http://stackoverflow.com/questions/17577093/how-do-i-get-the-absolute-directory-of-a-file-in-bash
+readLink() {
+  # (
+  # cd $(dirname $1)         # or  cd ${1%/*}
+  # echo $PWD/$(basename $1) # or  echo $PWD/${1##*/}
+  # )
+{ # this is my bash try block
+
+    cd $(dirname $1) > /dev/null 2>&1 &&
+    #save your output
+    echo $PWD/$(basename $1)
+} || { # this is catch block
+    # save log for exception
+    echo "_Error_"
+}
+
+}
+
+relative_path_from_dyndocker_home() {
+	path_file="$(readLink $1)"
+	#echo "$path_file"
+	if [[ $path_file =~ "${DYNDOCKER_HOME_DOC}/"(.*) ]]; then 
+	    path_file=${BASH_REMATCH[1]}
+	fi
+	echo "$path_file"
+}
+
+complete_path() {
+	path_file="$1"
+	if [[ $path_file =~ "%"(.*) ]]; then
+		path_file="${DYNDOCKER_HOME_DOC}/${BASH_REMATCH[1]}"
+	fi
+
+	dirname=`dirname ${path_file}`
+	basename=`basename ${path_file} $2`
+	if [ -f "${dirname}/${basename}$2" ]; then
+		#echo $path_file
+		path_file=$(relative_path_from_dyndocker_home ${path_file})
+		#echo $path_file
+		if [[ $path_file =~ "\/"(.*) ]]; then
+			echo "_Error_File $path_file is not a proper filename"
+		else
+			echo "$path_file"
+		fi
+	else
+		echo "_Error_File ${dirname}/${basename}$2 does not exists"
+	fi
+}
+
 update_dyndoc() {
 	echo "dyndoc_tmp=/.dyndoc_install_tmp" > ${DYNDOCKER_CACHE}/dyndoc_update.sh
 	echo 'mkdir -p $dyndoc_tmp' >> ${DYNDOCKER_CACHE}/dyndoc_update.sh
@@ -302,12 +351,17 @@ pdflatex)
 build)
 	shift
 	filename="${@: -1}"
-	dirname=`dirname ${filename}`
-	basename=`basename ${filename} .dyn`
+	# dirname=`dirname ${filename}`
+	# basename=`basename ${filename} .dyn`
 	length=$(($#-1))
 	dyn_options="${@:1:$length}" #all but last
-	${DOCKER_CMD} exec dyndocker dyn --docker $dyn_options /dyndoc-proj/$filename
-	pdflatex_complete
+	relative_filename=$(complete_path ${filename} .dyn)
+	if [[ "$relative_filename" =~ "_Error_"(.*) ]]; then
+		echo "ERROR: ${BASH_REMATCH[1]}!"
+	else
+		${DOCKER_CMD} exec dyndocker dyn --docker $dyn_options /dyndoc-proj/$relative_filename
+		pdflatex_complete
+	fi
 	;;
 update-client)
 	old="$(pwd)"

@@ -285,7 +285,7 @@ complete_path() {
 		path_file="${DYNDOCKER_HOME_DOC}/$(echo $path_file | cut -c2-)"
 		;;
 	esac
-	echo "path_file=$path_file"
+	#echo "path_file=$path_file"
 
 	dirname=`dirname ${path_file}`
 	basename=`basename ${path_file} $2`

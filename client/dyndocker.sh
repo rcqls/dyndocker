@@ -112,8 +112,9 @@ load_image() {
 		fi
 	fi
 	if [ "$IMAGE" != "" ];then
-		IMAGE_TGZ="/$IMAGE.tar.gz"
-		if [ -f "$IMAGE_TGZ" ]; then 
+		IMAGE_TGZ="${DYNDOCKER_CACHE}/$IMAGE.tar.gz"
+		if [ -f "$IMAGE_TGZ" ]; then
+			echo "Loading $IMAGE_TGZ" 
 			${DOCKER_CMD} load -i ${IMAGE_TGZ}
 		fi
 	fi

@@ -197,21 +197,55 @@ pdflatex_wrap() {
 	fi
 }
 
+awk_tasks() {
+	tasks=$(echo "$*" | awk 'BEGIN{ORS=" "}{n=split($0,a,",");for(;i++<n;) {print a[i];}}' -)
+	echo $tasks
+}
+
+test_awk_tasks() {
+	tasks=$(awk_tasks $*)
+	for t in $tasks; do
+		echo "task $t"
+	done
+}
+
+test_tasks() {
+	var="/dyndoc-proj/demo;first;1"
+	oldIFS=$IFS
+	IFS=";"
+	set -- $var
+	echo "$1"
+	echo "$2"
+	echo "$3"      # Note: if more than $9 you need curly braces e.g. "${10}"
+	IFS=$oldIFS
+}
+
 pdflatex_complete() {
 	task=`cat ${DYNDOCKER_CACHE}/task_latex_file`
 	#echo "task is $task"
-	IFS=',' read -a tasks <<< "$task"
+	tasks=$(awk_tasks $task)
+	oldIFS=$IFS
 	for t in $tasks; do
-		#echo "task $t"
-		IFS=';' read dir file nb <<< "$t"
-		if [[ $dir =~ "/dyndoc-proj/"(.*) ]]; then 
-		    dir=${BASH_REMATCH[1]}
-		fi
-		#echo "dir=$dir file=$file nb=$nb"
+		echo "task $t"
+		#IFS=';' read dir file nb <<< "$t"
+		var="$t"
+		IFS=";"
+		set -- $var
+		dir="$1"
+		file="$2"
+		nb="$3"
+		#
+		case $dir in
+			/dyndoc-proj/*)
+			dir="$(echo $dir | cut -c14-)"
+			;;
+		esac
+		echo "dir=$dir file=$file nb=$nb"
 		for i in $(seq 1 $nb); do
 			pdflatex_wrap $dir/$file.tex
 		done
 	done
+	IFS=$oldIFS
 }
 
 # From: http://stackoverflow.com/questions/17577093/how-do-i-get-the-absolute-directory-of-a-file-in-bash

@@ -240,7 +240,7 @@ pdflatex_complete() {
 			dir="$(echo $dir | cut -c14-)"
 			;;
 		esac
-		echo "dir=$dir file=$file nb=$nb"
+		#echo "dir=$dir file=$file nb=$nb"
 		for i in $(seq 1 $nb); do
 			pdflatex_wrap $dir/$file.tex
 		done
@@ -269,17 +269,23 @@ readLink() {
 relative_path_from_dyndocker_home() {
 	path_file="$(readLink $1)"
 	#echo "$path_file"
-	if [[ $path_file =~ "${DYNDOCKER_HOME_DOC}/"(.*) ]]; then 
-	    path_file=${BASH_REMATCH[1]}
-	fi
+	case $path_file in
+	"${DYNDOCKER_HOME_DOC}/*")
+		i=$(expr ${DYNDOCKER_HOME_DOC#} + 2)
+		path_file="$(echo $path_file | cut -c${i}-)"
+		;;
+	esac
 	echo "$path_file"
 }
 
 complete_path() {
 	path_file="$1"
-	if [[ $path_file =~ "%"(.*) ]]; then
-		path_file="${DYNDOCKER_HOME_DOC}/${BASH_REMATCH[1]}"
-	fi
+	case $path_file in
+	%*)
+		path_file="${DYNDOCKER_HOME_DOC}/$(echo $path_file | cut -c2-)"
+		;;
+	esac
+	echo "path_file=$path_file"
 
 	dirname=`dirname ${path_file}`
 	basename=`basename ${path_file} $2`
@@ -287,11 +293,13 @@ complete_path() {
 		#echo $path_file
 		path_file=$(relative_path_from_dyndocker_home ${path_file})
 		#echo $path_file
-		if [[ $path_file =~ "\/"(.*) ]]; then
+		case $path_file in
+		"/*")
 			echo "_Error_File $path_file is not a proper filename"
-		else
+			;;
+		*)
 			echo "$path_file"
-		fi
+		esac
 	else
 		echo "_Error_File ${dirname}/${basename}$2 does not exists"
 	fi
@@ -404,12 +412,15 @@ build)
 	length=$(($#-1))
 	dyn_options="${@:1:$length}" #all but last
 	relative_filename=$(complete_path ${filename} .dyn)
-	if [[ "$relative_filename" =~ "_Error_"(.*) ]]; then
-		echo "ERROR: ${BASH_REMATCH[1]}!"
-	else
+	case "$relative_filename" in
+	_Error_*)
+		echo "ERROR: $(echo $relative_filename | cut -c8-)"
+		;;
+	*)
 		${DOCKER_CMD} exec dyndocker dyn --docker $dyn_options /dyndoc-proj/$relative_filename
 		pdflatex_complete
-	fi
+		;;
+	esac
 	;;
 update-client)
 	old="$(pwd)"

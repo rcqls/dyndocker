@@ -3,6 +3,7 @@ DYNDOCKER_ROOT=$1
 if [ -d $DYNDOCKER_ROOT ]; then
 	DYNDOCKER_HOME=$DYNDOCKER_ROOT/.dyndocker
 	if [ -d $DYNDOCKER_HOME ]; then
+		echo "$DYNDOCKER_ROOT" > ~/.dyndocker_root
 		echo "To finalize your installation, add in your .profile:"
 		echo "export PATH=\${PATH}:${DYNDOCKER_HOME}/bin"
 		read -p "Do you want to do it now? Add ${DYNDOCKER_HOME}/bin to your PATH? [1=~/.profile,*=No]" -n 1 -r

@@ -17,6 +17,8 @@ else
 	DYNDOCKER_ROOT="$HOME"
 fi
 
+echo "DYNDOCKER_ROOT=$DYNDOCKER_ROOT"
+
 DYNDOCKER_HOME="$DYNDOCKER_ROOT/.dyndocker"
 DYNDOCKER_HOME_DOC="$DYNDOCKER_ROOT/dyndocker"
 DYNDOCKER_CACHE="${DYNDOCKER_HOME_DOC}/.cache"
@@ -268,10 +270,10 @@ readLink() {
 
 relative_path_from_dyndocker_home() {
 	path_file="$(readLink $1)"
-	#echo "$path_file"
+	# DEBUG: echo "rel_path=$path_file"
 	case $path_file in
-	"${DYNDOCKER_HOME_DOC}/*")
-		i=$(expr ${DYNDOCKER_HOME_DOC#} + 2)
+	${DYNDOCKER_HOME_DOC}/*)
+		i=$(expr ${#DYNDOCKER_HOME_DOC} + 2)
 		path_file="$(echo $path_file | cut -c${i}-)"
 		;;
 	esac
@@ -280,19 +282,22 @@ relative_path_from_dyndocker_home() {
 
 complete_path() {
 	path_file="$1"
+	ext="$2"
+	#echo $path_file
 	case $path_file in
 	%*)
 		path_file="${DYNDOCKER_HOME_DOC}/$(echo $path_file | cut -c2-)"
 		;;
 	esac
 	#echo "path_file=$path_file"
-
+	#echo $ext
 	dirname=`dirname ${path_file}`
-	basename=`basename ${path_file} $2`
-	if [ -f "${dirname}/${basename}$2" ]; then
-		#echo $path_file
+	basename=`basename ${path_file} $ext`
+	#DEBUG: echo "filename=${dirname}/${basename}$ext"
+	if [ -f "${dirname}/${basename}$ext" ]; then
+		#DEBUG: echo "complete_path: $path_file"
 		path_file=$(relative_path_from_dyndocker_home ${path_file})
-		#echo $path_file
+		#DEBUG: echo $path_file
 		case $path_file in
 		"/*")
 			echo "_Error_File $path_file is not a proper filename"
@@ -432,4 +437,11 @@ update-dyndoc)
 	shift
 	update_dyndoc $1
 	;;
+update-pdflatex-wrap)
+	create_pdflatex_wrap
+	;;
+test)
+	shift
+	relative_path_from_dyndocker_home /Users/remy/dyndocker/demo/first.dyn
+	#complete_path $*
 esac

@@ -3,7 +3,7 @@
 * Open a terminal and execute the following line:
 ```{.bash execute="false"}
 # install of dyndocker
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/rcqls/dyndocker/master/install-dyndocker.sh)"
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/rcqls/dyndocker/master/installer/install-dyndocker.sh)"
 ```
 * After installation of atom editor, install the atom-dyndocker, language-dyndoc and language-r packages.
 With apm in the PATH, this can be done via

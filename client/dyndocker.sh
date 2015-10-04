@@ -406,11 +406,10 @@ pdflatex)
 	;;
 build)
 	shift
-	filename="${@: -1}"
+	filename="$(awk_last $*)" 
 	# dirname=`dirname ${filename}`
 	# basename=`basename ${filename} .dyn`
-	length=$(($#-1))
-	dyn_options="${@:1:$length}" #all but last
+	dyn_options="$(awk_head $*) " #all but last
 	relative_filename=$(complete_path ${filename} .dyn)
 	case "$relative_filename" in
 	_Error_*)

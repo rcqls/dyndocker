@@ -5,6 +5,9 @@ DOCKER_CMD="docker"
 if [ "$(which docker-machine)" != "" ];then
 	DOCKER_MACHINE_NAME="default"
 	eval "$(docker-machine env ${DOCKER_MACHINE_NAME})"
+	if [ $DOCKER_CERT_PATH = "" ]; then
+		export DOCKER_CERT_PATH="$HOME/.docker/machine/machines/$DOCKER_MACHINE_NAME"
+	fi
 	#DOCKER_CMD="docker $(docker-machine config ${DOCKER_MACHINE_NAME})"
 fi
 

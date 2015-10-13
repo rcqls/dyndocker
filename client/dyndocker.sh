@@ -4,8 +4,17 @@ DOCKER_CMD="docker"
 
 if [ "$(which docker-machine)" != "" ];then
 	DOCKER_MACHINE_NAME="default"
-	DOCKER_CMD="docker $(docker-machine config ${DOCKER_MACHINE_NAME})"
+	eval "$(docker-machine env ${DOCKER_MACHINE_NAME})"
+	#DOCKER_CMD="docker $(docker-machine config ${DOCKER_MACHINE_NAME})"
 fi
+
+ROOT_FILE=""
+
+case "$(uname)" in
+MINGW*)
+	ROOT_FILE="/"
+	;;
+esac
 
 # This allows us to change the root of dyndocker
 # Useful when using VBox for Win and MacOSX by working inside the Virtual Box
@@ -57,8 +66,8 @@ create_dyndoc_container() {
 	if [ "$1" != "" ]; then tag="$1"; fi
 	${DOCKER_CMD} create \
 		-p 7777:7777 \
-		-v ${DYNDOCKER_HOME_DOC}:/dyndoc-proj \
-		-v ${DYNDOCKER_LIBRARY}:/dyndoc-library \
+		-v ${ROOT_FILE}${DYNDOCKER_HOME_DOC}:/dyndoc-proj \
+		-v ${ROOT_FILE}${DYNDOCKER_LIBRARY}:/dyndoc-library \
 		-t -i --name dyndocker \
 		rcqls/${DYNDOCKER_CONTAINER}:${tag}
 }
@@ -67,7 +76,7 @@ create_pdflatex_container() {
 	tag="latest"
 	if [ "$1" != "latest" ]; then tag="$1"; fi
 	${DOCKER_CMD} create \
-		-v ${DYNDOCKER_HOME_DOC}:/dyndoc-proj \
+		-v ${ROOT_FILE}${DYNDOCKER_HOME_DOC}:/dyndoc-proj \
 		-t -i --name dyndocker-pdflatex \
 		rcqls/dyndocker-pdflatex:${tag}
 
@@ -190,7 +199,7 @@ pdflatex_wrap() {
 	basename=`basename ${filename} .tex`
 	pdflatex_options=$(awk_head $*) #all but last
 	if [ "$(which pdflatex)" = "" ]; then
-		${DOCKER_CMD} exec -ti dyndocker-pdflatex /bin/bash -i /dyndoc-proj/.cache/pdflatex.sh $pdflatex_options $filename
+		${DOCKER_CMD} exec -ti dyndocker-pdflatex ${ROOT_FILE}/bin/bash -i ${ROOT_FILE}/dyndoc-proj/.cache/pdflatex.sh $pdflatex_options $filename
 	else
 		owd="$(pwd)"
 		wd="${DYNDOCKER_HOME_DOC}/${dirname}"
@@ -245,7 +254,7 @@ pdflatex_complete() {
 		esac
 		#echo "dir=$dir file=$file nb=$nb"
 		for i in $(seq 1 $nb); do
-			pdflatex_wrap $dir/$file.tex
+			pdflatex_wrap ${ROOT_FILE}$dir/$file.tex
 		done
 	done
 	IFS=$oldIFS
@@ -331,7 +340,7 @@ update_dyndoc() {
 		echo 'cp -r ./dyndoc-ruby-install/dyndoc_basic_root_structure/* /dyndoc'>> ${DYNDOCKER_CACHE}/dyndoc_update.sh
 	fi
 	echo 'rm -fr $dyndoc_tmp' >> ${DYNDOCKER_CACHE}/dyndoc_update.sh
-	${DOCKER_CMD} exec -ti dyndocker /bin/bash -i /dyndoc-proj/.cache/dyndoc_update.sh
+	${DOCKER_CMD} exec -ti dyndocker ${ROOT_FILE}/bin/bash -i /dyndoc-proj/.cache/dyndoc_update.sh
 }
 
 dyndocker_help() {
@@ -391,7 +400,7 @@ default)
 		set_default $1
 	fi
 	;;
-load-image)
+load-image) #put the tar.gz file inside dyndocker/.cache
 	shift
 	load_image $*
 	;;
@@ -400,12 +409,12 @@ R | irb  | gem | ruby | dpm)
 	${DOCKER_CMD} exec -ti dyndocker $cmd $*
 	;;
 bash)
-	${DOCKER_CMD} exec -ti dyndocker /bin/bash
+	${DOCKER_CMD} exec -ti dyndocker ${ROOT_FILE}/bin/bash
 	;;
 pdflatex)
 	shift
 	if [ "$1" = "" ]; then
-		${DOCKER_CMD} exec -ti dyndocker-pdflatex /bin/bash
+		${DOCKER_CMD} exec -ti dyndocker-pdflatex ${ROOT_FILE}/bin/bash
 	else
 		pdflatex_wrap $*
 	fi
@@ -422,7 +431,7 @@ build)
 		echo "ERROR: $(echo $relative_filename | cut -c8-)"
 		;;
 	*)
-		${DOCKER_CMD} exec dyndocker dyn --docker $dyn_options /dyndoc-proj/$relative_filename
+		${DOCKER_CMD} exec dyndocker dyn --docker $dyn_options ${ROOT_FILE}/dyndoc-proj/$relative_filename
 		pdflatex_complete
 		;;
 	esac
@@ -445,4 +454,7 @@ test)
 	shift
 	relative_path_from_dyndocker_home /Users/remy/dyndocker/demo/first.dyn
 	#complete_path $*
+	;;
+*)
+	docker $*
 esac

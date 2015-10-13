@@ -1,0 +1,3 @@
+-> dyndocker.bash is not useable inside default vbox since dash is the default shell. 
+-> dyndocker.sh implement the same tools in dash.
+-> This would be the only one later to maintain.

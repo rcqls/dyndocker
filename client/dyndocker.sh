@@ -343,7 +343,7 @@ update_dyndoc() {
 		echo 'cp -r ./dyndoc-ruby-install/dyndoc_basic_root_structure/* /dyndoc'>> ${DYNDOCKER_CACHE}/dyndoc_update.sh
 	fi
 	echo 'rm -fr $dyndoc_tmp' >> ${DYNDOCKER_CACHE}/dyndoc_update.sh
-	${DOCKER_CMD} exec -ti dyndocker ${ROOT_FILE}/bin/bash -i /dyndoc-proj/.cache/dyndoc_update.sh
+	${DOCKER_CMD} exec -ti dyndocker ${ROOT_FILE}/bin/bash -i ${ROOT_FILE}/dyndoc-proj/.cache/dyndoc_update.sh
 }
 
 dyndocker_help() {

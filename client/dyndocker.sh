@@ -251,13 +251,16 @@ pdflatex_complete() {
 		nb="$3"
 		#
 		case $dir in
-			/dyndoc-proj/*)
+		/dyndoc-proj)
+			dir="."
+			;;
+		/dyndoc-proj/*)
 			dir="$(echo $dir | cut -c14-)"
 			;;
 		esac
 		#echo "dir=$dir file=$file nb=$nb"
 		for i in $(seq 1 $nb); do
-			pdflatex_wrap ${ROOT_FILE}$dir/$file.tex
+			pdflatex_wrap $dir/$file.tex
 		done
 	done
 	IFS=$oldIFS

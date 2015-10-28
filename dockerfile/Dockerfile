@@ -74,6 +74,31 @@ ENV DYNDOC_LIBRARY /dyndoc-library/dyndoc
 
 RUN Rscript -e 'install.packages("base64")'
 
+
+RUN gem install rake filewatcher
+
+RUN mkdir -p /tmp/dyntask
+
+WORKDIR /tmp/dyntask
+
+RUN git clone https://github.com/rcqls/dyntask-ruby.git 
+
+WORKDIR /tmp/dyntask/dyntask-ruby
+
+RUN rake docker
+
+RUN rm -fr /tmp/dyntask
+
+
+
+RUN dyntask-init -w /dyndoc-proj -d dyn,pandoc
+
+
+
+RUN echo 'dyntask-server default'  >> $HOME/.profile
+
+
+
 ## ruby:	/dyndoc-library/ruby
 ENV PATH /dyndoc-library/ruby/bin:$PATH
 ENV GEM_PATH /dyndoc-library/ruby:$GEM_HOME
@@ -94,8 +119,13 @@ WORKDIR /dyndoc-proj
 EXPOSE 7777
 
 ## the server to expose
+RUN echo '#!/bin/bash' > /usr/local/bin/dyndoc_and_dyntask.sh
 
-CMD ["/usr/local/bin/dyn-srv"]
+RUN echo '/usr/local/bundle/bin/dyntask-server default&' >> /usr/local/bin/dyndoc_and_dyntask.sh
+
+RUN echo '/usr/local/bin/dyn-srv' >> /usr/local/bin/dyndoc_and_dyntask.sh
+
+CMD ["bash","/usr/local/bin/dyndoc_and_dyntask.sh"]
 
 
 ## END

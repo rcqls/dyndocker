@@ -379,6 +379,7 @@ create | new)
 		shift
 		create_pdflatex_container $*
 	else
+		shift
 		create_dyndoc_container $*
 	fi
 	;;
@@ -425,7 +426,10 @@ pdflatex)
 		pdflatex_wrap $*
 	fi
 	;;
-build)
+pdflatex-complete) #OBSOLETE SOON!
+	pdflatex_complete
+	;;
+build) #OBSOLETE SOON! REPLACED WITH TASK!
 	shift
 	filename="$(awk_last $*)" 
 	# dirname=`dirname ${filename}`
@@ -437,8 +441,7 @@ build)
 		echo "ERROR: $(echo $relative_filename | cut -c8-)"
 		;;
 	*)
-		${DOCKER_CMD} exec dyndocker dyn --docker $dyn_options ${ROOT_FILE}/dyndoc-proj/$relative_filename
-		pdflatex_complete
+		${DOCKER_CMD} exec dyndocker dyn $dyn_options ${ROOT_FILE}/dyndoc-proj/$relative_filename
 		;;
 	esac
 	;;
@@ -455,6 +458,12 @@ update-dyndoc)
 	;;
 update-pdflatex-wrap)
 	create_pdflatex_wrap
+	;;
+init-dyntask-share) 
+	mkdir ~/.tmp && cd ~/.tmp && git clone --depth 1 git://github.com/rcqls/dyntask-ruby.git
+	mkdir -p ~/.dyntask/share
+	cp -r dyntask/ruby/share/* ~/.dyntask/share/
+	rm -fr ~/.tmp
 	;;
 test)
 	shift

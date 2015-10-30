@@ -76,8 +76,8 @@ create_dyndoc_container() {
 }
 
 create_pdflatex_container() {
-	tag="latest"
-	if [ "$1" != "latest" ]; then tag="$1"; fi
+	tag="dyntask"
+	if [ "$1" != "" ] && [ "$1" != "dyntask" ]; then tag="$1"; fi
 	${DOCKER_CMD} create \
 		-v ${ROOT_FILE}${DYNDOCKER_HOME_DOC}:/dyndoc-proj \
 		-t -i --name dyndocker-pdflatex \
@@ -130,6 +130,42 @@ load_image() {
 			${DOCKER_CMD} load -i ${IMAGE_TGZ}
 		fi
 	fi
+}
+
+build_image() {
+	if [ "$1" = "--no-cache" ];then
+		OPTS="--no-cache"
+		shift
+	fi
+	mkdir ~/tmp/.build-image
+	cd ~/tmp/.build-image
+	if [ "$1" = "" ];then
+		TAG="rcqls/dyndocker:latest"
+		URL="git://github.com/rcqls/dyndocker.git"
+		DIR="dyndocker/dockerfile"
+	else 
+		if [ "$1" = "julia" ];then
+			TAG="rcqls/dyndocker-julia:latest"
+			URL="git://github.com/rcqls/dyndocker-julia.git"
+			DIR="dyndocker-julia"
+		fi
+		if [ "$1" = "pdflatex" ];then
+			TAG="rcqls/dyndocker-pdflatex:dyntask"
+			URL="git://github.com/rcqls/dyndocker-pdflatex.git"
+			DIR="dyndocker-pdflatex/dyntask"
+		fi
+	fi
+	if [ "$IMAGE" != "" ];then
+		IMAGE_TGZ="${DYNDOCKER_CACHE}/$IMAGE.tar.gz"
+		if [ -f "$IMAGE_TGZ" ]; then
+			echo "Loading $IMAGE_TGZ" 
+			${DOCKER_CMD} load -i ${IMAGE_TGZ}
+		fi
+	fi
+	git clone --depth 1 ${URL}
+	cd ${DIR}
+	${DOCKER_CMD} build ${OPTS} -t ${TAG} .
+	rm -fr ~/tmp/.build-image
 }
 
 
@@ -411,6 +447,10 @@ load-image) #put the tar.gz file inside dyndocker/.cache
 	shift
 	load_image $*
 	;;
+build-image) #build the image from scratch: 
+	shift
+	build_image $*
+	;;
 R | irb  | gem | ruby | dpm) 
 	shift
 	${DOCKER_CMD} exec -ti dyndocker $cmd $*
@@ -459,7 +499,7 @@ update-dyndoc)
 update-pdflatex-wrap)
 	create_pdflatex_wrap
 	;;
-init-dyntask-share) 
+init-dyntask-share) #to initialize some predefined tasks (in a ruby form) useable as template 
 	mkdir ~/.tmp && cd ~/.tmp && git clone --depth 1 git://github.com/rcqls/dyntask-ruby.git
 	mkdir -p ~/.dyntask/share
 	cp -r dyntask/ruby/share/* ~/.dyntask/share/

@@ -91,7 +91,7 @@ RUN rm -fr /tmp/dyntask
 
 
 
-RUN dyntask-init -w /dyndoc-proj -d dyn,pandoc
+RUN dyntask-init default /dyndoc-proj:dyn,pandoc
 
 
 

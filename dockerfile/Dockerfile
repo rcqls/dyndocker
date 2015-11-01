@@ -45,6 +45,14 @@ RUN rake docker
 
 WORKDIR /tmp/dyndoc
 
+RUN git clone https://github.com/rcqls/dyndoc-ruby-exec.git 
+
+WORKDIR dyndoc-ruby-exec
+
+RUN rake docker
+
+WORKDIR /tmp/dyndoc
+
 RUN git clone https://github.com/rcqls/rb4R.git && R CMD INSTALL rb4R
 
 
@@ -83,7 +91,15 @@ WORKDIR /tmp/dyntask
 
 RUN git clone https://github.com/rcqls/dyntask-ruby.git 
 
-WORKDIR /tmp/dyntask/dyntask-ruby
+WORKDIR dyntask-ruby
+
+RUN rake docker
+
+WORKDIR /tmp/dyntask
+
+RUN git clone https://github.com/rcqls/dyndoc-ruby-exec.git 
+
+WORKDIR dyndoc-ruby-exec
 
 RUN rake docker
 

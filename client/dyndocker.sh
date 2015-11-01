@@ -32,17 +32,36 @@ fi
 echo "DYNDOCKER_ROOT=$DYNDOCKER_ROOT"
 
 DYNDOCKER_HOME="$DYNDOCKER_ROOT/.dyndocker"
+
+init_workdir() {
+	DYNDOCKER_WORDIR_FILE="$DYNDOCKER_HOME/.workdir"
+	if [ -f "$DYNDOCKER_WORDIR_FILE" ];then
+		DYNDOCKER_WORKDIR=`cat $DYNDOCKER_WORDIR_FILE`
+		DYNDOCKER_CACHE_NAME=".dyndocker_cache"
+		DYNDOCKER_WORKDIR_TYPE="user"
+	else
+		DYNDOCKER_WORKDIR="$DYNDOCKER_ROOT/dyndocker"
+		DYNDOCKER_CACHE_NAME=".cache"
+		DYNDOCKER_WORKDIR_TYPE="normal"
+	fi
+}
+
+init_workdir
+
+if [ "$DYNDOCKER_WORKDIR_TYPE" = "user" ] && [ ! -d "$DYNDOCKER_WORKDIR" ];then
+	echo "Error: as a working directory $DYNDOCKER_WORKDIR does not exist!!!"
+	exit
+fi
+
+
+DYNDOCKER_CACHE="${DYNDOCKER_WORKDIR}/${DYNDOCKER_CACHE_NAME}"
 DYNDOCKER_HOME_DOC="$DYNDOCKER_ROOT/dyndocker"
-DYNDOCKER_CACHE="${DYNDOCKER_HOME_DOC}/.cache"
 
 mkdir -p ${DYNDOCKER_CACHE}
 
 
 DYNDOCKER_LIBRARY="$DYNDOCKER_HOME/library"
 
-if [ ! -d "$DYNDOCKER_HOME_DOC" ]; then
-	mkdir -p "$DYNDOCKER_HOME_DOC"
-fi
 if [ ! -d "$DYNDOCKER_LIBRARY" ];then
 	mkdir -p "$DYNDOCKER_LIBRARY"
 fi
@@ -69,7 +88,7 @@ create_dyndoc_container() {
 	if [ "$1" != "" ]; then tag="$1"; fi
 	${DOCKER_CMD} create \
 		-p 7777:7777 \
-		-v ${ROOT_FILE}${DYNDOCKER_HOME_DOC}:/dyndoc-proj \
+		-v ${ROOT_FILE}${DYNDOCKER_WORKDIR}:/dyndoc-proj \
 		-v ${ROOT_FILE}${DYNDOCKER_LIBRARY}:/dyndoc-library \
 		-t -i --name dyndocker \
 		rcqls/${DYNDOCKER_CONTAINER}:${tag}
@@ -79,7 +98,7 @@ create_pdflatex_container() {
 	tag="dyntask"
 	if [ "$1" != "" ] && [ "$1" != "dyntask" ]; then tag="$1"; fi
 	${DOCKER_CMD} create \
-		-v ${ROOT_FILE}${DYNDOCKER_HOME_DOC}:/dyndoc-proj \
+		-v ${ROOT_FILE}${DYNDOCKER_WORKDIR}:/dyndoc-proj \
 		-t -i --name dyndocker-pdflatex \
 		rcqls/dyndocker-pdflatex:${tag}
 
@@ -107,6 +126,14 @@ set_default() {
 	if [ "$DEFAULT" != "" ]; then
 		echo "WARNING: $DYNDOCKER_HOME/.default changed!"
 		echo "$DEFAULT" > "$DYNDOCKER_HOME/.default"
+	fi
+}
+
+set_workdir() {
+	WORKDIR="$1"
+	if [ -d $WORKDIR ];then
+		echo "WARNING: $DYNDOCKER_HOME/.workdir changed!"
+		echo "$WORKDIR" > "$DYNDOCKER_HOME/.workdir"
 	fi
 }
 
@@ -241,7 +268,7 @@ pdflatex_wrap() {
 		${DOCKER_CMD} exec -ti dyndocker-pdflatex ${ROOT_FILE}/bin/bash -i ${ROOT_FILE}/dyndoc-proj/.cache/pdflatex.sh $pdflatex_options $filename
 	else
 		owd="$(pwd)"
-		wd="${DYNDOCKER_HOME_DOC}/${dirname}"
+		wd="${DYNDOCKER_WORKDIR}/${dirname}"
 		cd ${wd}
 		pdflatex ${pdflatex_options} ${basename}
 		cd "${owd}"
@@ -324,8 +351,8 @@ relative_path_from_dyndocker_home() {
 	path_file="$(readLink $1)"
 	# DEBUG: echo "rel_path=$path_file"
 	case $path_file in
-	${DYNDOCKER_HOME_DOC}/*)
-		i=$(expr ${#DYNDOCKER_HOME_DOC} + 2)
+	${DYNDOCKER_WORKDIR}/*)
+		i=$(expr ${#DYNDOCKER_WORKDIR} + 2)
 		path_file="$(echo $path_file | cut -c${i}-)"
 		;;
 	esac
@@ -338,7 +365,7 @@ complete_path() {
 	#echo $path_file
 	case $path_file in
 	%*)
-		path_file="${DYNDOCKER_HOME_DOC}/$(echo $path_file | cut -c2-)"
+		path_file="${DYNDOCKER_WORKDIR}/$(echo $path_file | cut -c2-)"
 		;;
 	esac
 	#echo "path_file=$path_file"
@@ -376,6 +403,11 @@ update_dyndoc() {
 		echo 'git clone https://github.com/rcqls/dyndoc-ruby-doc.git' >> ${DYNDOCKER_CACHE}/dyndoc_update.sh
 		echo 'cd dyndoc-ruby-doc;rake docker'>> ${DYNDOCKER_CACHE}/dyndoc_update.sh
 	fi
+	if [ "$1" = "exec" ] || [ "$1" = "" ];then
+		echo 'cd $dyndoc_tmp' >> ${DYNDOCKER_CACHE}/dyndoc_update.sh
+		echo 'git clone https://github.com/rcqls/dyndoc-ruby-exec.git' >> ${DYNDOCKER_CACHE}/dyndoc_update.sh
+		echo 'cd dyndoc-ruby-exec;rake docker'>> ${DYNDOCKER_CACHE}/dyndoc_update.sh
+	fi
 	if [ "$1" = "bin" ] || [ "$1" = "" ];then
 		echo 'cd $dyndoc_tmp' >> ${DYNDOCKER_CACHE}/dyndoc_update.sh
 		echo 'git clone https://github.com/rcqls/dyndoc-ruby-install.git' >> ${DYNDOCKER_CACHE}/dyndoc_update.sh
@@ -405,13 +437,44 @@ dyndocker_help() {
 	echo "	-> dyndocker update-dyndoc [core|doc|bin]: to update dyndoc-ruby core, doc and bin"
 }
 
+create_container() {
+	if [ "$1" = "--all" ];then
+		create_dyndoc_container
+		create_pdflatex_container
+	elif [ "$1" = "pdflatex" ];then
+		shift
+		create_pdflatex_container $*
+	else
+		create_dyndoc_container $*
+	fi
+}
+
+upgrade_container() {
+	if [ "$1" = "" ];then
+		name="dyndocker"
+	elif [ "$1" = "pdflatex" ];then
+		name="dyndocker-pdflatex"
+	fi
+	echo "stopping container $name"
+	stop_container $1
+	echo "removing container $name"
+	remove_container $1
+	echo "creating container $name"
+	create_container $1
+	echo "starting container $name"
+	start_container $1
+}
+
 case "$cmd" in
 --help)
 	dyndocker_help
 	;;
 create | new)
 	shift
-	if [ "$1" = "pdflatex" ];then
+	if [ "$1" = "--all" ];then
+		create_dyndoc_container
+		create_pdflatex_container
+	elif [ "$1" = "pdflatex" ];then
 		shift
 		create_pdflatex_container $*
 	else
@@ -419,37 +482,99 @@ create | new)
 		create_dyndoc_container $*
 	fi
 	;;
+upgrade)
+	shift
+	if [ "$1" = "--all" ];then
+		if [ "$2" != "" ] && [ -d "$2" ];then
+			set_workdir $2
+			init_workdir
+		fi
+		upgrade_container 
+		upgrade_container pdflatex
+	else
+		upgrade_container $1
+	fi
+	;;
 start)
 	shift
-	start_container $*
+	if [ "$1" = "--all" ];then
+		start_container
+		start_container pdflatex
+	else
+		start_container $*
+	fi
 	;;
 stop)
 	shift
-	stop_container $*
+	if [ "$1" = "--all" ];then
+		stop_container
+		stop_container pdflatex
+	else
+		stop_container $*
+	fi
 	;;
 restart)
 	shift
-	restart_container $*
+	if [ "$1" = "--all" ];then
+		restart_container
+		restart_container pdflatex
+	else
+		restart_container $*
+	fi
 	;;
 remove | delete | rm)
 	shift
-	remove_container $*
+	if [ "$1" = "--all" ];then
+		remove_container
+		remove_container pdflatex
+	else
+		remove_container $*
+	fi
 	;;
 default)
 	shift
 	if [ "$1" = "" ];then
-		echo "Default dyndocker container is $(cat $DYNDOCKER_HOME/.default)"
+		if [ -f $DYNDOCKER_HOME/.default ];then
+			echo "Default dyndocker container is $(cat $DYNDOCKER_HOME/.default)"
+		else
+			echo "Default container is not set!"
+		fi
 	else
 		set_default $1
 	fi
 	;;
+workdir| wd)
+	shift
+	if [ "$1" = "" ];then
+		if [ -f $DYNDOCKER_HOME/.workdir ];then
+			echo "Workdir is $(cat $DYNDOCKER_HOME/.workdir)"
+		else
+			echo "Workdir is not set!"
+		fi
+	else
+		set_workdir $1
+	fi
+	;;
 load-image) #put the tar.gz file inside dyndocker/.cache
 	shift
-	load_image $*
+	if [ "$1" = "--all" ];then
+		shift
+		load-image
+		load-image pdflatex
+	else
+		load_image $*
+	fi
 	;;
 build-image) #build the image from scratch: 
 	shift
-	build_image $*
+	if [ "$1" = "--all" ];then
+		shift
+		## --no-cache by default!
+		build_image --no-cache
+		build_image --no-cache pdflatex
+	else
+		build_image $*
+	fi
 	;;
 R | irb  | gem | ruby | dpm) 
 	shift

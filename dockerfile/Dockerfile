@@ -109,6 +109,8 @@ RUN rm -fr /tmp/dyntask
 
 RUN dyntask-init default /dyndoc-proj:dyn,pandoc
 
+RUN dyntask-init pandoc-extra dir /dyndoc-library/pandoc-extra
+
 
 
 RUN echo 'dyntask-server default'  >> $HOME/.profile

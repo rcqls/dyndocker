@@ -13,6 +13,10 @@ RUN gem install bundler \
 # don't create ".bundle" in all our apps
 ENV BUNDLE_APP_CONFIG $GEM_HOME
 
+## Pandoc
+
+RUN wget https://github.com/jgm/pandoc/releases/download/1.15.1/pandoc-1.15.1-1-amd64.deb && dpkg -i pandoc-1.15.1-1-amd64.deb
+
 ## Dyndoc
 
 RUN gem install rake configliere ultraviolet

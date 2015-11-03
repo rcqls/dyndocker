@@ -95,6 +95,8 @@ WORKDIR dyntask-ruby
 
 RUN rake docker
 
+RUN mkdir -p ~/.dyntask && cp -r share ~/.dyntask
+
 WORKDIR /tmp/dyntask
 
 RUN git clone https://github.com/rcqls/dyndoc-ruby-exec.git 

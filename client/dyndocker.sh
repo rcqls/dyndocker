@@ -559,8 +559,8 @@ load-image) #put the tar.gz file inside dyndocker/.cache
 	shift
 	if [ "$1" = "--all" ];then
 		shift
-		load-image
-		load-image pdflatex
+		load_image
+		load_image pdflatex
 	else
 		load_image $*
 	fi
@@ -627,7 +627,7 @@ update-pdflatex-wrap)
 init-dyntask-share) #to initialize some predefined tasks (in a ruby form) useable as template 
 	mkdir ~/.tmp && cd ~/.tmp && git clone --depth 1 git://github.com/rcqls/dyntask-ruby.git
 	mkdir -p ~/.dyntask/share
-	cp -r dyntask/ruby/share/* ~/.dyntask/share/
+	cp -r dyntask-ruby/share/* ~/.dyntask/share/
 	rm -fr ~/.tmp
 	;;
 test)

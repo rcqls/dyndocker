@@ -4,6 +4,10 @@ DOCKER_CMD="docker"
 
 if [ "$(which docker-machine)" != "" ];then
 	DOCKER_MACHINE_NAME="default"
+	if [ "$(docker-machine status ${DOCKER_MACHINE_NAME})" = "Stopped" ] || [ "$(docker-machine status ${DOCKER_MACHINE_NAME})" = "Saved" ]; then
+		echo "Please start the docker machine first: docker-machine start ${DOCKER_MACHINE_NAME}"
+		exit
+	fi
 	eval "$(docker-machine env ${DOCKER_MACHINE_NAME})"
 	if [ $DOCKER_CERT_PATH = "" ]; then
 		export DOCKER_CERT_PATH="$HOME/.docker/machine/machines/$DOCKER_MACHINE_NAME"
@@ -82,6 +86,16 @@ fi
 
 # see https://www.wanadev.fr/docker-vivre-avec-une-baleine-partie-2/
 # no more use of "docker run -d" but "docker create" and then docker start|stop|restart
+check_state() {
+	if [ ! -d "${DYNDOCKER_LIBRARY}/pandoc-extra" ]; then
+		echo "WARNING: To use pandoc extra revealjs and s5, you need to install pandoc-extra: dyndocker get-pandoc-extra"
+	fi
+	if [ ! -d "$HOME/.dyntask/share/tasks" ]; then
+		echo "WARNING: To use atom-dyndocker package, you need to init tasks: dyndocker init-dyntask-share"
+	fi
+}
+
+check_state
 
 create_dyndoc_container() {
 	tag="latest"
@@ -609,6 +623,9 @@ build) #OBSOLETE SOON! REPLACED WITH TASK!
 		${DOCKER_CMD} exec dyndocker dyn $dyn_options ${ROOT_FILE}/dyndoc-proj/$relative_filename
 		;;
 	esac
+	;;
+check-state)
+	check_state
 	;;
 update-client)
 	old="$(pwd)"

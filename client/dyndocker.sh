@@ -34,9 +34,9 @@ echo "DYNDOCKER_ROOT=$DYNDOCKER_ROOT"
 DYNDOCKER_HOME="$DYNDOCKER_ROOT/.dyndocker"
 
 init_workdir() {
-	DYNDOCKER_WORDIR_FILE="$DYNDOCKER_HOME/.workdir"
-	if [ -f "$DYNDOCKER_WORDIR_FILE" ];then
-		DYNDOCKER_WORKDIR=`cat $DYNDOCKER_WORDIR_FILE`
+	DYNDOCKER_WORKDIR_FILE="$DYNDOCKER_HOME/.workdir"
+	if [ -f "$DYNDOCKER_WORKDIR_FILE" ];then
+		DYNDOCKER_WORKDIR=`cat $DYNDOCKER_WORKDIR_FILE`
 		DYNDOCKER_CACHE_NAME=".dyndocker_cache"
 		DYNDOCKER_WORKDIR_TYPE="user"
 	else
@@ -629,6 +629,16 @@ init-dyntask-share) #to initialize some predefined tasks (in a ruby form) useabl
 	mkdir -p ~/.dyntask/share
 	cp -r dyntask-ruby/share/* ~/.dyntask/share/
 	rm -fr ~/.tmp
+	;;
+get-pandoc-extra)
+	## Stuff!	
+	mkdir -p ${DYNDOCKER_LIBRARY}/pandoc-extra
+	cd ${DYNDOCKER_LIBRARY}/pandoc-extra
+  	version="3.1.0"
+  	puts "Installing reveal-js-${version}"
+  	wget -O revealjs.tgz https://github.com/hakimel/reveal.js/archive/${version}.tar.gz && tar xzvf revealjs.tgz && rm revealjs.tgz 
+  	puts "Installing s5-11"
+  	wget -O s5.zip http://meyerweb.com/eric/tools/s5/v/1.1/s5-11.zip && mkdir -p s5-tmp && unzip -d s5-tmp s5.zip && mv s5-tmp/ui s5-ui && rm s5.zip && rm -fr s5-tmp
 	;;
 test)
 	shift

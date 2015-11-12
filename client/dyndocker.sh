@@ -664,11 +664,7 @@ get-pandoc-extra)
   	puts "Installing s5-11"
   	wget -O s5.zip http://meyerweb.com/eric/tools/s5/v/1.1/s5-11.zip && mkdir -p s5-tmp && unzip -d s5-tmp s5.zip && mv s5-tmp/ui s5-ui && rm s5.zip && rm -fr s5-tmp
 	;;
-test)
-	shift
-	relative_path_from_dyndocker_home /Users/remy/dyndocker/demo/first.dyn
-	#complete_path $*
-	;;
 *)
 	docker $*
+	;;
 esac

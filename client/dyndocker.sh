@@ -595,7 +595,14 @@ R | irb  | gem | ruby | dpm)
 	${DOCKER_CMD} exec -ti dyndocker $cmd $*
 	;;
 bash)
-	${DOCKER_CMD} exec -ti dyndocker ${ROOT_FILE}/bin/bash
+	shift
+	if [ "$1" = "pdflatex" ];then
+		container="dyndocker-pdflatex"
+	else
+		container="dyndocker"
+	fi
+	${DOCKER_CMD} exec -ti ${container} ${ROOT_FILE}/bin/bash
+	
 	;;
 pdflatex)
 	shift

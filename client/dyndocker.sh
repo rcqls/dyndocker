@@ -98,9 +98,14 @@ check_state() {
 check_state
 
 create_dyndoc_container() {
-	tag="latest"
-	if [ "$1" != "" ]; then tag="$1"; fi
-	${DOCKER_CMD} create \
+	
+	args="";args_etc="$DYNDOCKER_HOME/etc/create_args_dyndocker"
+	if [ -f "${args_etc}" ]; then 
+		args=`cat  ${args_etc}`
+	fi
+
+	tag="latest";if [ "$1" != "" ]; then tag="$1"; fi
+	${DOCKER_CMD} create ${args}\
 		-p 7777:7777 \
 		-v ${ROOT_FILE}${DYNDOCKER_WORKDIR}:/dyndoc-proj \
 		-v ${ROOT_FILE}${DYNDOCKER_LIBRARY}:/dyndoc-library \
@@ -109,9 +114,14 @@ create_dyndoc_container() {
 }
 
 create_pdflatex_container() {
+	args="";args_etc="$DYNDOCKER_HOME/etc/create_args_dyndocker_pdflatex"
+	if [ -f "${args_etc}" ]; then 
+		args=`cat  ${args_etc}`
+	fi
+
 	tag="dyntask"
 	if [ "$1" != "" ] && [ "$1" != "dyntask" ]; then tag="$1"; fi
-	${DOCKER_CMD} create \
+	${DOCKER_CMD} create ${args}\
 		-v ${ROOT_FILE}${DYNDOCKER_WORKDIR}:/dyndoc-proj \
 		-t -i --name dyndocker-pdflatex \
 		rcqls/dyndocker-pdflatex:${tag}
@@ -663,6 +673,18 @@ get-pandoc-extra)
   	wget -O revealjs.tgz https://github.com/hakimel/reveal.js/archive/${version}.tar.gz && tar xzvf revealjs.tgz && rm revealjs.tgz 
   	puts "Installing s5-11"
   	wget -O s5.zip http://meyerweb.com/eric/tools/s5/v/1.1/s5-11.zip && mkdir -p s5-tmp && unzip -d s5-tmp s5.zip && mv s5-tmp/ui s5-ui && rm s5.zip && rm -fr s5-tmp
+	;;
+get-web-tools)
+	mkdir -p ${DYNDOCKER_LIBRARY}/web
+	cd ${DYNDOCKER_LIBRARY}/web
+	mkdir js
+	cd js
+	version="1.2.2"
+	wget -O ace.tgz  https://github.com/ajaxorg/ace-builds/archive/v${version}.tar.gz && tar xzvf ace.tgz && rm ace.tgz && mv ace-builds-${version} ace
+	cd ace/src
+	wget https://raw.github.com/rcqls/dyndoc-syntax/master/ace/mode-dyndoc.js
+	cd snippets
+	wget -O dyndoc.js https://raw.github.com/rcqls/dyndoc-syntax/master/ace/snippets-dyndoc.js
 	;;
 *)
 	docker $*

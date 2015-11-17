@@ -71,7 +71,8 @@ RUN rm -fr /tmp/dyndoc
 
 RUN ln -s /dyndoc/bin/dyndoc-compile.rb /usr/local/bin/dyn \
 	&& ln -s /dyndoc/bin/dyndoc-package.rb /usr/local/bin/dpm \
-	&& ln -s /dyndoc/bin/dyndoc-server-simple.rb /usr/local/bin/dyn-srv
+	&& ln -s /dyndoc/bin/dyndoc-server-simple.rb /usr/local/bin/dyn-srv \
+    && ln -s /dyndoc/bin/dyndoc-client-html.rb /usr/local/bin/dyn-cli
 
 ## mountpoints are for
 RUN mkdir -p /dyndoc-library
@@ -113,7 +114,7 @@ RUN rm -fr /tmp/dyntask
 
 
 
-RUN dyntask-init default /dyndoc-proj:dyn,pandoc
+RUN dyntask-init default /dyndoc-proj:dyn,pandoc,dyn_cli
 
 RUN dyntask-init pandoc-extra dir --force /dyndoc-library/pandoc-extra
 

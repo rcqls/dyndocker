@@ -84,6 +84,12 @@ if [ "$cmd" = "" ]; then
 	cmd="--help"
 fi
 
+DYNDOCKER_EDITOR="subl -n -w"
+if [ -f "$DYNDOCKER_HOME/etc/editor" ];then
+	DYNDOCKER_EDITOR=`cat $DYNDOCKER_HOME/etc/editor`
+fi
+
+
 # see https://www.wanadev.fr/docker-vivre-avec-une-baleine-partie-2/
 # no more use of "docker run -d" but "docker create" and then docker start|stop|restart
 check_state() {
@@ -217,6 +223,33 @@ build_image() {
 	cd ${DIR}
 	${DOCKER_CMD} build ${OPTS} -t ${TAG} .
 	rm -fr ~/tmp/.build-image
+}
+
+start_services() {
+
+	if [ "$1" = "" ];then
+		CONTAINER="dyndocker"
+	else 
+		if [ "$1" = "pdflatex" ];then
+			CONTAINER="dyndocker-pdflatex"
+		fi
+	fi
+
+	services="";services_etc="$DYNDOCKER_HOME/etc/services/${CONTAINER}/default"
+	if [ -f "${services_etc}" ]; then 
+		services=`cat ${services_etc}`
+	fi
+
+	for service in $services
+	do
+		service_run="$DYNDOCKER_HOME/etc/services/${CONTAINER}/${service}"
+		if [ -f "${service_run}" ];then
+			echo "Starting ${service} for container ${CONTAINER}"
+			${service_run}
+		else 
+			echo "Warning: service $service does not exist!"
+		fi
+	done
 }
 
 
@@ -487,6 +520,7 @@ upgrade_container() {
 	create_container $1
 	echo "starting container $name"
 	start_container $1
+	start_services
 }
 
 case "$cmd" in
@@ -513,19 +547,46 @@ upgrade)
 			set_workdir $2
 			init_workdir
 		fi
-		upgrade_container 
+		upgrade_container
+		start_services
 		upgrade_container pdflatex
+		start_services pdflatex
 	else
 		upgrade_container $1
+		start_services $1
+	fi
+	;;
+services)
+	## services to launch after starting of container
+	shift
+	if [ "$1" = "start" ];then
+		shift
+		start_services $1
+	elif [ "$1" = "edit" ];then
+		shift
+		if [ "$1" = "" ];then
+			name="dyndocker"
+		elif [ "$1" = "pdflatex" ];then
+			name="dyndocker-pdflatex"
+		fi
+		services_default="$DYNDOCKER_HOME/etc/services/$name/default"
+		$DYNDOCKER_EDITOR $services_default
+		if [ -f "$services_default" ] && [ "$(cat $services_default)" = "" ];then
+			rm $services_default
+		fi
 	fi
 	;;
 start)
 	shift
 	if [ "$1" = "--all" ];then
 		start_container
+		start_services
 		start_container pdflatex
+		start_services pdflatex
+
 	else
 		start_container $*
+		start_services $*
 	fi
 	;;
 stop)
@@ -541,9 +602,12 @@ restart)
 	shift
 	if [ "$1" = "--all" ];then
 		restart_container
+		start_services
 		restart_container pdflatex
+		start_services pdflatex
 	else
 		restart_container $*
+		start_services $*
 	fi
 	;;
 remove | delete | rm)
@@ -675,10 +739,8 @@ get-pandoc-extra)
   	wget -O s5.zip http://meyerweb.com/eric/tools/s5/v/1.1/s5-11.zip && mkdir -p s5-tmp && unzip -d s5-tmp s5.zip && mv s5-tmp/ui s5-ui && rm s5.zip && rm -fr s5-tmp
 	;;
 get-web-tools)
-	mkdir -p ${DYNDOCKER_LIBRARY}/web
-	cd ${DYNDOCKER_LIBRARY}/web
-	mkdir js
-	cd js
+	mkdir -p ${DYNDOCKER_WORKDIR}/web/tools
+	cd ${DYNDOCKER_WORKDIR}/web/tools
 	version="1.2.2"
 	wget -O ace.tgz  https://github.com/ajaxorg/ace-builds/archive/v${version}.tar.gz && tar xzvf ace.tgz && rm ace.tgz && mv ace-builds-${version} ace
 	cd ace/src
